@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(pip show *)",
+      "Bash(python setup_db.py)",
+      "Bash(python -X utf8 setup_db.py)",
+      "Bash(python -X utf8 -c ' *)",
+      "Bash(python -X utf8 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload)",
+      "Bash(curl -s http://localhost:8000/api/filters)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('파트:', d['파트']\\); print\\('주기:', d['주기']\\); print\\('구분:', d['구분']\\)\")",
+      "Bash(curl -s \"http://localhost:8000/api/calendar/2026/5\")",
+      "Bash(curl -s \"http://localhost:8000/\")",
+      "PowerShell(Start-Sleep -Seconds 2; Invoke-WebRequest -Uri \"http://localhost:8000/api/tasks\" -UseBasicParsing -TimeoutSec 5 | Select-Object -ExpandProperty StatusCode)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
