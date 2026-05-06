@@ -123,9 +123,24 @@ select.filter-select:focus { border-color: var(--primary); }
 .chip-done     { opacity: .6; }
 .chip-delayed  { border-left-color: var(--status-delayed) !important; }
 
-.more-chip { padding: 2px 6px; font-size: 10px; color: var(--text-muted);
-             cursor: pointer; text-align: center; border-radius: 4px; }
-.more-chip:hover { background: var(--bg); }
+.more-chip { padding: 2px 6px; font-size: 10px; color: var(--primary);
+             cursor: pointer; text-align: center; border-radius: 4px; font-weight: 600; }
+.more-chip:hover { background: var(--primary-light); }
+
+/* ── 날짜 팝업 ── */
+.day-popup-overlay { position: fixed; inset: 0; z-index: 90; }
+.day-popup-overlay.hidden { display: none; }
+.day-popup { position: fixed; background: var(--surface); border: 1px solid var(--border);
+             border-radius: 12px; box-shadow: var(--shadow-lg); width: 280px;
+             max-height: 400px; display: flex; flex-direction: column; z-index: 91;
+             animation: modal-in .15s ease; }
+.day-popup-header { padding: 12px 14px; border-bottom: 1px solid var(--border);
+                    display: flex; align-items: center; justify-content: space-between; }
+.day-popup-header span { font-size: 13px; font-weight: 700; }
+.day-popup-close { border: none; background: none; cursor: pointer; font-size: 14px;
+                   color: var(--text-muted); padding: 2px 6px; border-radius: 4px; }
+.day-popup-close:hover { background: var(--bg); }
+.day-popup-list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
 
 /* ── 목록 뷰 ── */
 #list-view { max-width: 1100px; margin: 0 auto; }
@@ -361,6 +376,17 @@ tr:hover td { background: #FAFBFC; cursor: pointer; }
   </div>
 </div>
 
+<!-- 날짜 팝업 -->
+<div class="day-popup-overlay hidden" id="day-popup-overlay">
+  <div class="day-popup" id="day-popup">
+    <div class="day-popup-header">
+      <span id="day-popup-title"></span>
+      <button class="day-popup-close" id="day-popup-close">✕</button>
+    </div>
+    <div class="day-popup-list" id="day-popup-list"></div>
+  </div>
+</div>
+
 <!-- 태스크 모달 -->
 <div class="modal-overlay hidden" id="modal-overlay">
   <div class="modal" id="modal">
@@ -553,7 +579,7 @@ function renderCalendar() {
         <span class="chip-text">${escHtml(t?.업무||"")}</span>${si}</div>`;
     }
     if (hidden > 0) {
-      html += `<div class="more-chip" data-date="${ds}" data-evts='${JSON.stringify(rawEvts.slice(MAX).map(e=>e.task_id))}'>+${hidden} 더보기</div>`;
+      html += `<div class="more-chip" data-date="${ds}" data-all='${JSON.stringify(rawEvts)}'>+${hidden} 더보기</div>`;
     }
     html += `</div></div>`;
   }
@@ -568,9 +594,11 @@ function renderCalendar() {
     });
   });
   document.querySelectorAll(".more-chip").forEach(el => {
-    el.addEventListener("click", () => {
-      const ids = JSON.parse(el.dataset.evts);
-      if (ids.length > 0) openModal(ids[0], null);
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const evts = JSON.parse(el.dataset.all);
+      const ds = el.dataset.date;
+      openDayPopup(ds, evts, el);
     });
   });
 }
@@ -763,6 +791,47 @@ function closeModal() {
   state.modal = { taskId: null, periodKey: null, selectedStatus: null };
 }
 
+function openDayPopup(ds, evts, anchorEl) {
+  const tasks = state.calData?.tasks || {};
+  const [y, m, d] = ds.split("-");
+  document.getElementById("day-popup-title").textContent = `${+m}월 ${+d}일 업무 전체`;
+
+  const list = document.getElementById("day-popup-list");
+  list.innerHTML = evts.map(ev => {
+    const t = tasks[ev.task_id];
+    const cc = chipClass(t);
+    const si = ev.status !== "pending"
+      ? `<span class="chip-status">${{done:"✓",in_progress:"◑",delayed:"!",skipped:"—"}[ev.status]||""}</span>` : "";
+    return `<div class="task-chip ${cc}${ev.status==="done"?" chip-done":""}${ev.status==="delayed"?" chip-delayed":""}"
+      style="padding:5px 8px;font-size:12px;"
+      data-task="${ev.task_id}" data-pk="${escHtml(ev.period_key)}">
+      <span class="chip-text">${escHtml(t?.업무||"")}</span>${si}
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll(".task-chip[data-task]").forEach(el => {
+    el.addEventListener("click", () => {
+      closeDayPopup();
+      openModal(+el.dataset.task, el.dataset.pk);
+    });
+  });
+
+  // 팝업 위치: 앵커 아래
+  const popup = document.getElementById("day-popup");
+  const rect = anchorEl.getBoundingClientRect();
+  const popupW = 280;
+  let left = rect.left;
+  if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+  popup.style.left = `${left}px`;
+  popup.style.top  = `${rect.bottom + 4}px`;
+
+  document.getElementById("day-popup-overlay").classList.remove("hidden");
+}
+
+function closeDayPopup() {
+  document.getElementById("day-popup-overlay").classList.add("hidden");
+}
+
 async function reloadCalData() {
   if (state.view === "calendar" && state.calData) {
     state.calData = await api.get(`/api/calendar/${state.year}/${state.month}`);
@@ -816,7 +885,11 @@ document.getElementById("modal-close").addEventListener("click", closeModal);
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === e.currentTarget) closeModal();
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+document.getElementById("day-popup-close").addEventListener("click", closeDayPopup);
+document.getElementById("day-popup-overlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeDayPopup();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeDayPopup(); } });
 
 document.querySelectorAll(".status-btn").forEach(btn => {
   btn.addEventListener("click", () => {
