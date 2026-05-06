@@ -17,9 +17,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
+@app.head("/")
 def root():
     with open(os.path.join(os.path.dirname(__file__), "static", "index.html"), encoding="utf-8") as f:
         return f.read()
+
+
+@app.get("/health")
+@app.head("/health")
+def health():
+    return {"status": "ok"}
 
 
 # ── 업무 API ─────────────────────────────────────────────────
