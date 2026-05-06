@@ -159,24 +159,36 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
 
     if 주기 == "매월":
         mk = f"{year}-{month:02d}"
+
+        def to_mon(d: int) -> int:
+            dt = date(year, month, min(d, last))
+            wd = dt.weekday()
+            if wd == 5:
+                nxt = dt + timedelta(days=2)
+                return nxt.day if nxt.month == month else dt.day - 1
+            if wd == 6:
+                nxt = dt + timedelta(days=1)
+                return nxt.day if nxt.month == month else dt.day - 2
+            return dt.day
+
         if "결산" in 시기:
-            days = [25]
+            days = [to_mon(25)]
         elif "1~4주차" in 시기 or "1-4주차" in 시기:
             days = all_wd(0)
         elif "월말" in 시기:
-            days = [last]
+            days = [to_mon(last)]
         elif "중순~말" in 시기:
-            days = [20]
+            days = [to_mon(20)]
         elif "중순" in 시기:
-            days = [15]
+            days = [to_mon(15)]
         elif "첫째주" in 시기 or "월초" in 시기:
-            days = [1]
+            days = [to_mon(1)]
         elif "월 2회" in 시기 or "월2회" in 시기:
-            days = [10, 25]
+            days = [to_mon(10), to_mon(25)]
         elif "수시" in 시기:
-            days = [1]
+            days = [to_mon(1)]
         else:
-            days = [1]
+            days = [to_mon(1)]
         return [(d, mk) for d in days if d <= last]
 
     return []
