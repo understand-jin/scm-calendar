@@ -169,6 +169,11 @@ tr:hover td { background: #FAFBFC; cursor: pointer; }
 .badge-daily  { background: #FEF3C7; color: #D97706; }
 .badge-weekly { background: #DCFCE7; color: #16A34A; }
 .badge-monthly{ background: #EDE9FE; color: #7C3AED; }
+.badge-trade  { background: #FEF9C3; color: #854D0E; }
+
+.list-section { margin-bottom: 24px; }
+.list-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 0 2px; }
+.list-section-count { font-size: 12px; color: var(--text-muted); font-weight: 500; }
 
 /* ── 통계 뷰 ── */
 #stats-view { max-width: 900px; margin: 0 auto; }
@@ -346,23 +351,8 @@ tr:hover td { background: #FAFBFC; cursor: pointer; }
     <!-- 목록 뷰 -->
     <div id="list-view" style="display:none;">
       <h2>업무 목록</h2>
-      <div class="list-table-wrap">
-        <table id="list-table">
-          <thead>
-            <tr>
-              <th data-col="파트">파트</th>
-              <th data-col="주기">주기</th>
-              <th data-col="구분">구분</th>
-              <th data-col="업무">업무명</th>
-              <th data-col="주인">담당자</th>
-              <th data-col="시기_마감">시기/마감</th>
-              <th data-col="output">Output</th>
-            </tr>
-          </thead>
-          <tbody id="list-body">
-            <tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>
-          </tbody>
-        </table>
+      <div id="list-sections">
+        <div class="loading"><div class="spinner"></div></div>
       </div>
     </div>
 
@@ -616,6 +606,8 @@ async function loadList() {
 }
 
 function renderList() {
+  const CYCLE_ORDER = { "매일": 0, "매주": 1, "매월": 2 };
+
   const tasks = state.allTasks.filter(t => {
     const f = state.filters;
     if (f.파트 && t.파트 !== f.파트) return false;
@@ -625,31 +617,82 @@ function renderList() {
     return true;
   });
 
-  if (state.sortCol) {
-    tasks.sort((a, b) => {
-      const av = a[state.sortCol] || "", bv = b[state.sortCol] || "";
-      return av.localeCompare(bv, "ko") * state.sortDir;
-    });
-  }
+  const container = document.getElementById("list-sections");
 
   if (!tasks.length) {
-    document.getElementById("list-body").innerHTML = '<tr><td colspan="7" class="empty">표시할 업무가 없습니다.</td></tr>';
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">표시할 업무가 없습니다.</div>';
     return;
   }
 
-  document.getElementById("list-body").innerHTML = tasks.map(t => `
-    <tr data-id="${t.id}">
-      <td>${badgePart(t)}</td>
-      <td>${badgeCycle(t.주기 || "")}</td>
-      <td><span class="badge" style="background:#F8FAFC">${escHtml(t.구분 || "-")}</span></td>
-      <td style="font-weight:500">${escHtml(t.업무)}</td>
-      <td>${escHtml(t.주인 || "-")}</td>
-      <td>${escHtml(t.시기_마감 || "-")}</td>
-      <td style="color:var(--text-muted);font-size:12px">${escHtml(t.output || "-")}</td>
-    </tr>`).join("");
+  const sortGroup = arr => [...arr].sort((a, b) => {
+    const co = (CYCLE_ORDER[a.주기] ?? 99) - (CYCLE_ORDER[b.주기] ?? 99);
+    if (co !== 0) return co;
+    if (state.sortCol) {
+      const av = a[state.sortCol] || "", bv = b[state.sortCol] || "";
+      return av.localeCompare(bv, "ko") * state.sortDir;
+    }
+    return 0;
+  });
 
-  document.querySelectorAll("#list-body tr").forEach(row => {
+  const makeTable = arr => {
+    const sorted = sortGroup(arr);
+    const sortIndicator = col => state.sortCol === col
+      ? (state.sortDir === 1 ? " sort-asc" : " sort-desc") : "";
+    return `
+      <div class="list-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="주기" class="${sortIndicator("주기")}">주기</th>
+              <th data-col="구분" class="${sortIndicator("구분")}">구분</th>
+              <th data-col="업무" class="${sortIndicator("업무")}">업무명</th>
+              <th data-col="주인" class="${sortIndicator("주인")}">담당자</th>
+              <th data-col="시기_마감" class="${sortIndicator("시기_마감")}">시기/마감</th>
+              <th data-col="output" class="${sortIndicator("output")}">Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(t => `
+              <tr data-id="${t.id}">
+                <td>${badgeCycle(t.주기 || "")}</td>
+                <td><span class="badge" style="background:#F8FAFC">${escHtml(t.구분 || "-")}</span></td>
+                <td style="font-weight:500">${escHtml(t.업무)}</td>
+                <td>${escHtml(t.주인 || "-")}</td>
+                <td>${escHtml(t.시기_마감 || "-")}</td>
+                <td style="color:var(--text-muted);font-size:12px">${escHtml(t.output || "-")}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+  };
+
+  const groups = [
+    { key: "수출입파트", label: "수출입파트", badgeCls: "badge-trade",
+      tasks: tasks.filter(t => t.파트 === "수출입파트") },
+    { key: "SCM쉐어드파트", label: "SCM쉐어드파트", badgeCls: "badge-scm",
+      tasks: tasks.filter(t => t.파트 === "SCM쉐어드파트") },
+  ].filter(g => g.tasks.length > 0);
+
+  container.innerHTML = groups.map(g => `
+    <div class="list-section">
+      <div class="list-section-header">
+        <span class="badge ${g.badgeCls}">${g.label}</span>
+        <span class="list-section-count">${g.tasks.length}건</span>
+      </div>
+      ${makeTable(g.tasks)}
+    </div>`).join("");
+
+  container.querySelectorAll("tbody tr").forEach(row => {
     row.addEventListener("click", () => openModal(+row.dataset.id, null));
+  });
+
+  container.querySelectorAll("th[data-col]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (state.sortCol === col) state.sortDir *= -1;
+      else { state.sortCol = col; state.sortDir = 1; }
+      renderList();
+    });
   });
 }
 
@@ -920,18 +963,6 @@ document.getElementById("save-log-btn").addEventListener("click", async () => {
   } finally {
     btn.disabled = false; btn.textContent = "저장";
   }
-});
-
-// 목록 정렬
-document.querySelectorAll("th[data-col]").forEach(th => {
-  th.addEventListener("click", () => {
-    const col = th.dataset.col;
-    if (state.sortCol === col) state.sortDir *= -1;
-    else { state.sortCol = col; state.sortDir = 1; }
-    document.querySelectorAll("th[data-col]").forEach(h => h.classList.remove("sort-asc","sort-desc"));
-    th.classList.add(state.sortDir === 1 ? "sort-asc" : "sort-desc");
-    renderList();
-  });
 });
 
 // ── 초기 로드 ────────────────────────────────────────────────
