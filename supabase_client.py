@@ -73,7 +73,10 @@ def select_logs(task_id: int) -> list[dict]:
     return _get("task_logs", {"select": "*", "task_id": f"eq.{task_id}", "order": "logged_at.desc"})
 
 def select_logs_for_month(month_prefix: str) -> list[dict]:
-    return _get("task_logs", {"select": "*", "period_key": f"like.{month_prefix}%"})
+    year = month_prefix[:4]
+    monthly = _get("task_logs", {"select": "*", "period_key": f"like.{month_prefix}%"})
+    weekly  = _get("task_logs", {"select": "*", "period_key": f"like.{year}-W%"})
+    return monthly + weekly
 
 def select_recent_logs(limit: int = 20) -> list[dict]:
     return _get("task_logs", {"select": "*", "order": "logged_at.desc", "limit": str(limit)})
@@ -97,3 +100,10 @@ def delete_log(log_id: int) -> None:
 
 def delete_all_logs() -> None:
     _delete("task_logs", {"id": "gte.0"})
+
+def insert_task(data: dict) -> dict:
+    rows = _post("tasks", data)
+    return rows[0] if rows else {}
+
+def delete_task(task_id: int) -> None:
+    _delete("tasks", {"id": f"eq.{task_id}"})

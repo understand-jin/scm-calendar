@@ -46,14 +46,14 @@ def show_schema_instructions():
 
 def load_excel_data():
     files = {
-        "SCM쉐어드파트": os.path.join(BASE_DIR, "SCM쉐어드파트.xlsx"),
-        "수출입파트": os.path.join(BASE_DIR, "수출입파트.xlsx"),
+        "SCM쉐어드파트": (os.path.join(BASE_DIR, "SCM쉐어드파트.xlsx"), "쉐어드파트"),
+        "수출입파트": (os.path.join(BASE_DIR, "수출입파트.xlsx"), "수출입파트"),
     }
 
     tasks = []
-    for part, path in files.items():
+    for part, (path, sheet) in files.items():
         print(f"  읽는 중: {os.path.basename(path)}")
-        df = pd.read_excel(path, sheet_name="Sheet1")
+        df = pd.read_excel(path, sheet_name=sheet)
         df.columns = [str(c).strip() for c in df.columns]
 
         for _, row in df.iterrows():

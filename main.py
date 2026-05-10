@@ -98,6 +98,28 @@ def remove_log(log_id: int):
     return {"deleted": True}
 
 
+class TaskCreate(BaseModel):
+    파트: Optional[str] = None
+    주기: Optional[str] = None
+    구분: Optional[str] = None
+    업무: str
+    주인: Optional[str] = None
+    시기_마감: Optional[str] = None
+    output: Optional[str] = None
+    비고: Optional[str] = None
+
+
+@app.post("/api/tasks")
+def create_task(body: TaskCreate):
+    return db.insert_task({k: v for k, v in body.dict().items() if v is not None})
+
+
+@app.delete("/api/tasks/{task_id}")
+def delete_task(task_id: int):
+    db.delete_task(task_id)
+    return {"deleted": True}
+
+
 # ── 통계 API ─────────────────────────────────────────────────
 
 @app.get("/api/stats")
@@ -130,6 +152,7 @@ def get_filters():
 # ── 캘린더 이벤트 생성 ────────────────────────────────────────
 
 def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
+    import re as _re
     주기 = task.get("주기") or ""
     시기 = (task.get("시기_마감") or "").strip()
     last = calendar.monthrange(year, month)[1]
@@ -159,37 +182,116 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
 
     if 주기 == "매월":
         mk = f"{year}-{month:02d}"
+        WD_KO = {"월":0,"화":1,"수":2,"목":3,"금":4}
 
-        def to_mon(d: int) -> int:
+        def first_biz() -> int:
+            """당월 첫 영업일 (1일이 주말이면 다음 월요일)"""
+            d = 1
+            while date(year, month, d).weekday() >= 5:
+                d += 1
+            return d
+
+        def last_biz() -> int:
+            """당월 마지막 영업일 (말일이 주말이면 직전 금요일)"""
+            d = last
+            while date(year, month, d).weekday() >= 5:
+                d -= 1
+            return d
+
+        def to_biz(d: int) -> int:
+            """특정 날짜가 주말이면 다음 영업일로 (월 밖이면 직전 금요일)"""
             dt = date(year, month, min(d, last))
             wd = dt.weekday()
             if wd == 5:
                 nxt = dt + timedelta(days=2)
-                return nxt.day if nxt.month == month else dt.day - 1
+                return nxt.day if nxt.month == month else (dt - timedelta(1)).day
             if wd == 6:
                 nxt = dt + timedelta(days=1)
-                return nxt.day if nxt.month == month else dt.day - 2
+                return nxt.day if nxt.month == month else (dt - timedelta(2)).day
             return dt.day
 
-        if "결산" in 시기:
-            days = [to_mon(25)]
-        elif "1~4주차" in 시기 or "1-4주차" in 시기:
-            days = all_wd(0)
-        elif "월말" in 시기:
-            days = [to_mon(last)]
-        elif "중순~말" in 시기:
-            days = [to_mon(20)]
-        elif "중순" in 시기:
-            days = [to_mon(15)]
-        elif "첫째주" in 시기 or "월초" in 시기:
-            days = [to_mon(1)]
-        elif "월 2회" in 시기 or "월2회" in 시기:
-            days = [to_mon(10), to_mon(25)]
-        elif "수시" in 시기:
-            days = [to_mon(1)]
-        else:
-            days = [to_mon(1)]
-        return [(d, mk) for d in days if d <= last]
+        def nth_weekday(week: int, wd: int) -> int:
+            """월 내 N번째 wd 요일의 날짜 (없으면 0)"""
+            count = 0
+            for d in range(1, last + 1):
+                if date(year, month, d).weekday() == wd:
+                    count += 1
+                    if count == week:
+                        return d
+            return 0
+
+        def parse_single(s: str) -> list[int]:
+            s = s.strip()
+
+            # N/M주차 요일 (예: '2/4주차 목요일')
+            m = _re.match(r'^(\d)/(\d)주차\s*([월화수목금])', s)
+            if m:
+                wd = WD_KO[m.group(3)]
+                return [d for d in [nth_weekday(int(m.group(1)), wd),
+                                     nth_weekday(int(m.group(2)), wd)] if d]
+
+            # N주차 요일 (예: '2주차 목요일', '3주차 월요일')
+            m = _re.match(r'^(\d)주차\s*([월화수목금])', s)
+            if m:
+                d = nth_weekday(int(m.group(1)), WD_KO[m.group(2)])
+                return [d] if d else []
+
+            # N주차 단독 (예: '1주차', '2주차') → N번째 월요일
+            m = _re.match(r'^(\d)주차$', s)
+            if m:
+                d = nth_weekday(int(m.group(1)), 0)
+                return [d] if d else []
+
+            # 결산
+            if "결산" in s:
+                return [to_biz(25)]
+
+            # 중순~말 / 월중순~말
+            if "중순~말" in s:
+                return [to_biz(20)]
+
+            # 월말 / 말일 / 당월 말
+            if "월말" in s or "말일" in s or "당월 말" in s:
+                return [last_biz()]
+
+            # 1~4주차 (매주 반복)
+            if "1~4주차" in s or "1-4주차" in s:
+                return all_wd(0)
+
+            # 첫 영업일 / 첫째주 / 월초
+            if "첫 영업일" in s or "첫영업일" in s or "첫째주" in s or "월초" in s:
+                return [first_biz()]
+
+            # 중순
+            if "중순" in s:
+                return [to_biz(15)]
+
+            # 월 2회
+            if "월 2회" in s or "월2회" in s:
+                return [to_biz(10), to_biz(25)]
+
+            # 수시
+            if "수시" in s:
+                return [first_biz()]
+
+            # N일 패턴 (예: '매월 20일', '20일')
+            m = _re.search(r'(\d+)일', s)
+            if m:
+                n = int(m.group(1))
+                if 1 <= n <= 31:
+                    return [to_biz(n)]
+
+            # 기본: 첫 영업일
+            return [first_biz()]
+
+        # 콤마로 구분된 복합 패턴 처리 (예: '3주차 월요일, 4주차 금요일')
+        parts = [p.strip() for p in 시기.split(",")]
+        days_set: list[int] = []
+        for part in parts:
+            days_set.extend(parse_single(part))
+
+        days = sorted(set(d for d in days_set if 1 <= d <= last))
+        return [(d, mk) for d in days]
 
     return []
 
