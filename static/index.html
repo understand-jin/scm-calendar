@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SCM 통합 캘린더</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Surfaces */
@@ -55,6 +55,33 @@
   --shadow: 0 1px 4px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.04);
   --shadow-md: 0 4px 12px -2px rgba(16,24,40,.10), 0 2px 6px -2px rgba(16,24,40,.05);
   --shadow-lg: 0 16px 40px -4px rgba(16,24,40,.14), 0 6px 16px -4px rgba(16,24,40,.08);
+
+  /* Extended token set */
+  --fg-1: #111827;
+  --fg-2: #57637A;
+  --fg-3: #98A2B4;
+  --other-main: #64748B;
+  --other-light: #F1F5F9;
+  --other-border: #94A3B8;
+  --status-done-bg: #DCFCE7;
+  --status-done-fg: #15803D;
+  --status-done-dot: #16A34A;
+  --status-progress-bg: #FEF3C7;
+  --status-progress-fg: #A16207;
+  --status-progress-dot: #D97706;
+  --status-delayed-bg: #FEE2E2;
+  --status-delayed-fg: #B91C1C;
+  --status-delayed-dot: #DC2626;
+  --status-skipped-bg: #F1F5F9;
+  --status-skipped-fg: #475569;
+  --status-pending-bg: #F1F5F9;
+  --status-pending-fg: #94A3B8;
+  --status-pending-dot: #CBD5E1;
+  --ring-primary: 0 0 0 3px rgba(26,63,200,.12);
+  --ring-primary-strong: 0 0 0 3px var(--primary-light);
+  --radius-xs: 3px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,7 +91,7 @@ body { font-family: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-s
 /* ── 레이아웃 ── */
 #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden;
        border-top: 3px solid transparent;
-       border-image: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary-mid) 50%, #5B8DEF 100%) 1; }
+       border-image: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary-mid) 50%, #FDB079 100%) 1; }
 header { background: var(--surface); border-bottom: 1px solid var(--border);
          padding: 0 28px; display: flex; align-items: center; gap: 20px;
          height: 60px; flex-shrink: 0; box-shadow: var(--shadow-md); }
@@ -196,11 +223,12 @@ select.filter-select.is-active { border-color: var(--primary-border); background
 .sdot {
   width: 8px; height: 8px; border-radius: 50%;
   display: inline-block; flex-shrink: 0; }
-.sdot-done     { background: #16a34a; box-shadow: 0 0 0 1px #bbf7d0; }
-.sdot-progress { background: #d97706; box-shadow: 0 0 0 1px #fde68a; }
-.sdot-delayed  { background: #dc2626; box-shadow: 0 0 0 1px #fecaca; }
-.sdot-pending  { background: #cbd5e1; }
-.sdot-skipped  { background: #94a3b8; }
+.sdot-done        { background: var(--status-done-dot);     box-shadow: 0 0 0 1px #bbf7d0; }
+.sdot-in_progress { background: var(--status-progress-dot); box-shadow: 0 0 0 1px #fde68a; }
+.sdot-progress    { background: var(--status-progress-dot); box-shadow: 0 0 0 1px #fde68a; }
+.sdot-delayed     { background: var(--status-delayed-dot);  box-shadow: 0 0 0 1px #fecaca; }
+.sdot-pending     { background: var(--status-pending-dot); }
+.sdot-skipped     { background: #94a3b8; }
 
 /* ③ 매일 업무 바 */
 .daily-bar {
@@ -516,12 +544,537 @@ tr.data-row:hover .btn-row-del { display: flex; }
   .cal-cell { min-height: 90px; padding: 4px; }
   .task-chip { font-size: 10px; }
   .info-grid { grid-template-columns: 1fr; }
-  #list-sections { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── 월간 요약 카드 ── */
+.month-summary {
+  max-width: 1600px; margin: 0 auto 14px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+}
+.ms-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; position: relative;
+  box-shadow: var(--shadow-xs); overflow: hidden;
+}
+.ms-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, var(--primary-mid));
+}
+.ms-card.total { --accent: linear-gradient(90deg, var(--primary-dark), var(--primary-mid), #FDB079); }
+.ms-card.done  { --accent: linear-gradient(90deg, #16A34A, #4ADE80); }
+.ms-card.prog  { --accent: linear-gradient(90deg, #D97706, #F59E0B); }
+.ms-card.delay { --accent: linear-gradient(90deg, #DC2626, #F87171); }
+.ms-card.pend  { --accent: linear-gradient(90deg, #94A3B8, #CBD5E1); }
+.ms-card .ms-label {
+  font-size: 10.5px; font-weight: 700; color: var(--fg-3);
+  text-transform: uppercase; letter-spacing: .6px;
+}
+.ms-card .ms-value {
+  font-size: 22px; font-weight: 700; letter-spacing: -.5px;
+  color: var(--fg-1); margin-top: 4px;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.ms-card .ms-unit { font-size: 11px; font-weight: 500; color: var(--fg-3); }
+.ms-card .ms-sub { font-size: 11px; color: var(--fg-2); margin-top: 4px; }
+.ms-card.total .ms-value strong { color: var(--primary); }
+.ms-card.done  .ms-value strong { color: #15803D; }
+.ms-card.prog  .ms-value strong { color: #A16207; }
+.ms-card.delay .ms-value strong { color: #B91C1C; }
+.ms-card.pend  .ms-value strong { color: var(--fg-2); }
+.ms-progress {
+  position: absolute; right: 12px; top: 14px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: conic-gradient(var(--primary) calc(var(--p) * 1%), var(--bg) 0);
+  display: flex; align-items: center; justify-content: center;
+}
+.ms-progress::after {
+  content: ""; position: absolute; inset: 4px; background: var(--surface); border-radius: 50%;
+}
+.ms-progress span { position: relative; z-index: 1; font-size: 10px; font-weight: 700; color: var(--primary); }
+
+/* ── 달력 셀 강화 ── */
+.day-stripe {
+  display: flex; gap: 1px; height: 3px; margin: 0 -6px 4px;
+  border-radius: 2px; overflow: hidden;
+}
+.day-stripe i { flex: 1; min-width: 2px; }
+.day-stripe .s-done { background: var(--status-done-dot); }
+.day-stripe .s-prog { background: var(--status-progress-dot); }
+.day-stripe .s-del  { background: var(--status-delayed-dot); }
+.day-stripe .s-pen  { background: var(--status-pending-dot); }
+.day-stripe .s-skp  { background: #94A3B8; }
+.cell-count {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 10px; font-weight: 700; color: var(--fg-2);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 9px; padding: 0 6px; min-width: 18px; text-align: center; line-height: 14px;
+}
+.cal-cell.today .cell-count,
+.cal-cell.selected .cell-count { background: var(--surface); color: var(--primary); border-color: var(--primary-border); }
+.cal-weekday .ko { display: block; font-size: 13px; color: var(--fg-1); font-weight: 700; }
+.cal-weekday .en { display: block; font-size: 9px; font-weight: 600; color: var(--fg-3); letter-spacing: .5px; margin-top: 1px; }
+.cal-cell .day-num { position: relative; }
+.cal-cell.today .day-num::after {
+  content: "오늘"; position: absolute; left: 30px; top: 5px;
+  font-size: 9.5px; font-weight: 700; color: var(--primary);
+  background: var(--surface); border: 1px solid var(--primary-border);
+  padding: 1px 5px; border-radius: 3px; letter-spacing: -.2px; white-space: nowrap;
+}
+
+/* ── 사이드 패널 강화 ── */
+.day-side-day-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--primary); color: white; font-weight: 700; font-size: 13px; margin-right: 8px;
+}
+.day-side-rel {
+  font-size: 11px; color: var(--primary); font-weight: 600;
+  background: var(--primary-light); border: 1px solid var(--primary-border);
+  padding: 2px 8px; border-radius: 10px; margin-left: 6px;
+}
+.ds-day-meta {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.ds-day-meta .pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--fg-2); font-weight: 600;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 7px;
+}
+.ds-day-meta .pill b { color: var(--fg-1); font-weight: 700; }
+
+/* ── FAB ── */
+.fab {
+  position: fixed; right: 28px; bottom: 28px;
+  height: 44px; padding: 0 18px 0 14px;
+  background: var(--primary); color: white;
+  border: none; border-radius: 22px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px;
+  box-shadow: 0 8px 22px -4px rgba(26,63,200,.45), 0 4px 8px -2px rgba(26,63,200,.25);
+  transition: transform .12s ease, background .15s ease; z-index: 50;
+}
+.fab:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.fab .plus { font-size: 18px; line-height: 1; }
+
+/* ── 목록 뷰 (새 디자인) ── */
+#list-view { max-width: 1600px; margin: 0 auto; }
+.list-toolbar {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.list-toolbar-left { display: flex; align-items: baseline; gap: 12px; }
+.list-toolbar-left h2 { font-size: 19px; font-weight: 700; letter-spacing: -.5px; margin: 0; color: var(--fg-1); }
+.list-total { font-size: 12px; color: var(--fg-2); }
+.list-total b { color: var(--fg-1); font-weight: 700; }
+.list-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.list-search {
+  position: relative; display: flex; align-items: center;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 0 8px 0 30px;
+  box-shadow: var(--shadow-xs); transition: all .15s; min-width: 280px;
+}
+.list-search:focus-within { border-color: var(--primary); box-shadow: var(--ring-primary); }
+.list-search .ls-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--fg-3); font-size: 14px;
+}
+.list-search input {
+  border: none; outline: none; background: transparent;
+  padding: 8px 4px; font-family: inherit; font-size: 13px;
+  flex: 1; color: var(--fg-1); min-width: 0;
+}
+.list-search .ls-clear {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--fg-3); font-size: 12px; padding: 4px;
+}
+.list-search .ls-clear:hover { color: var(--fg-1); }
+.btn-add {
+  padding: 7px 16px; background: var(--primary); color: white; border: none;
+  border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: background .15s; white-space: nowrap;
+}
+.btn-add:hover { background: var(--primary-dark); }
+
+.cycle-tabs {
+  display: inline-flex; gap: 2px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 9px; padding: 3px;
+  margin-bottom: 16px; align-items: center;
+}
+.cycle-tab {
+  border: none; background: transparent; cursor: pointer;
+  padding: 6px 14px; border-radius: 7px; font-family: inherit;
+  font-size: 12.5px; font-weight: 600; color: var(--fg-2);
+  display: inline-flex; align-items: center; gap: 7px; transition: all .15s;
+}
+.cycle-tab:hover:not(.active) { color: var(--fg-1); }
+.cycle-tab.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
+.cycle-count {
+  font-size: 10.5px; font-weight: 700; color: var(--fg-3);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 1px 7px; border-radius: 10px; line-height: 1.4;
+}
+.cycle-tab.active .cycle-count { color: var(--primary); background: var(--primary-light); border-color: var(--primary-border); }
+.cycle-tab.k-daily.active   .cycle-count { color: #92400E; background: #FEF3C7; border-color: #FDE68A; }
+.cycle-tab.k-weekly.active  .cycle-count { color: #14532D; background: #DCFCE7; border-color: #BBF7D0; }
+.cycle-tab.k-monthly.active .cycle-count { color: #4C1D95; background: #EDE9FE; border-color: #DDD6FE; }
+.cycle-tabs-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.cycle-tabs-meta { font-size: 11.5px; color: var(--fg-3); padding: 0 6px; }
+.cycle-tabs-meta b { color: var(--fg-1); font-weight: 700; }
+
+.parts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 1200px) { .parts-grid { grid-template-columns: 1fr; } }
+.part-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--shadow-md); overflow: hidden;
+}
+.part-panel.part-scm { border-top: 3px solid var(--scm-main); }
+.part-panel.part-exp { border-top: 3px solid var(--exp-main); }
+.part-panel-hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border);
+}
+.part-panel-mark { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 5px; letter-spacing: -.2px; }
+.part-panel-hd h3 { font-size: 14px; font-weight: 700; margin: 0; letter-spacing: -.3px; color: var(--fg-1); }
+.part-panel-cnt {
+  font-size: 11px; font-weight: 700; color: var(--fg-2);
+  background: var(--bg); border: 1px solid var(--border); padding: 2px 9px; border-radius: 10px;
+}
+.part-panel-meta { margin-left: auto; display: flex; gap: 10px; font-size: 11px; color: var(--fg-3); }
+.ppc { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.ppc .badge { padding: 1px 6px; font-size: 10px; }
+.part-table { border: none !important; border-radius: 0 !important; box-shadow: none !important; }
+.part-table td, .part-table th { overflow: hidden; text-overflow: ellipsis; }
+.part-table .td-task { white-space: normal; overflow: visible; }
+.td-task-name { font-weight: 600; color: var(--fg-1); letter-spacing: -.2px; white-space: normal; line-height: 1.45; }
+.td-task-note {
+  font-size: 11.5px; color: var(--fg-3); margin-top: 3px; line-height: 1.45;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.td-output-inline { font-weight: 500; color: var(--fg-2); }
+.td-empty { text-align: center; padding: 24px !important; color: var(--fg-3); font-size: 12px; }
+.td-dash { color: var(--fg-3); }
+.td-owner, .td-sigi { color: var(--fg-2); font-size: 12.5px; }
+.td-sigi { font-size: 12px; }
+.sigi-date {
+  display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 700;
+  color: var(--primary); background: var(--primary-light);
+  border: 1px solid var(--primary-border); border-radius: 4px;
+  padding: 1px 5px; letter-spacing: -.2px;
+}
+.cat-pill {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  color: var(--fg-2); background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 7px;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600; padding: 3px 9px;
+  border-radius: 12px; border: 1px solid;
+}
+.status-pill.s-done        { color: #15803D; background: #DCFCE7; border-color: #BBF7D0; }
+.status-pill.s-in_progress { color: #A16207; background: #FEF3C7; border-color: #FDE68A; }
+.status-pill.s-delayed     { color: #B91C1C; background: #FEE2E2; border-color: #FECACA; }
+.status-pill.s-skipped     { color: #475569; background: #F1F5F9; border-color: #CBD5E1; }
+.status-pill.s-pending     { color: #64748B; background: var(--bg); border-color: var(--border); }
+.list-view .list-table-wrap th.sortable { cursor: pointer; }
+.list-view .list-table-wrap th.sortable:hover { color: var(--primary); }
+.list-view .list-table-wrap th.active { color: var(--primary); }
+.list-view .list-table-wrap th.active.sort-asc::after  { content: " ↑"; color: var(--primary-mid); }
+.list-view .list-table-wrap th.active.sort-desc::after { content: " ↓"; color: var(--primary-mid); }
+.list-empty-state {
+  text-align: center; padding: 40px; color: var(--fg-3); font-size: 13px;
+  background: var(--surface); border: 1px dashed var(--border-strong); border-radius: 10px;
+}
+
+/* ── 배지 추가 ── */
+.badge-other { background: var(--other-light); color: var(--other-main); }
+
+/* ── 인트로 스플래시 ── */
+#intro-splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(36,82,222,.25) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(91,141,239,.18) 0%, transparent 55%),
+    linear-gradient(135deg, #0A1845 0%, #122EA8 45%, #1A3FC8 100%);
+  color: white; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  animation: intro-fade-out .7s ease 3.6s forwards; cursor: pointer;
+}
+#intro-splash.is-gone { display: none; }
+.intro-bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+  animation: intro-grid-pan 12s linear infinite;
+}
+@keyframes intro-grid-pan {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 56px 56px, 56px 56px; }
+}
+.intro-sweep {
+  position: absolute; top: 0; bottom: 0; width: 30%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.10) 50%, transparent 100%);
+  transform: translateX(-100%) skewX(-12deg);
+  animation: intro-sweep 1.0s ease .2s forwards;
+}
+@keyframes intro-sweep {
+  from { transform: translateX(-100%) skewX(-12deg); }
+  to   { transform: translateX(450%) skewX(-12deg); }
+}
+.intro-stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,.85), transparent 50%),
+    radial-gradient(1px 1px at 24% 72%, rgba(255,255,255,.75), transparent 50%),
+    radial-gradient(1.2px 1.2px at 38% 32%, rgba(255,255,255,.7), transparent 50%),
+    radial-gradient(1px 1px at 55% 14%, rgba(255,255,255,.8), transparent 50%),
+    radial-gradient(1.5px 1.5px at 68% 78%, rgba(255,255,255,.85), transparent 50%),
+    radial-gradient(1px 1px at 79% 24%, rgba(255,255,255,.65), transparent 50%),
+    radial-gradient(1.2px 1.2px at 88% 58%, rgba(255,255,255,.75), transparent 50%),
+    radial-gradient(1.4px 1.4px at 47% 88%, rgba(255,255,255,.8), transparent 50%);
+  animation: stars-twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes stars-twinkle { from { opacity: .55; } to { opacity: 1; } }
+.intro-globe-wrap {
+  position: absolute; left: 50%; top: 50%;
+  width: 520px; height: 520px;
+  transform: translate(-50%, -50%);
+  opacity: 0; animation: globe-in 1.2s cubic-bezier(.22,1,.36,1) .1s forwards;
+  pointer-events: none;
+}
+@keyframes globe-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.82); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.intro-globe { width: 100%; height: 100%; filter: drop-shadow(0 0 60px rgba(91,141,239,.35)); }
+.globe-spin {
+  transform-box: fill-box; transform-origin: center;
+  animation: globe-spin 14s linear infinite;
+}
+@keyframes globe-spin {
+  0%   { transform: scaleX(1);    opacity: 1; }
+  49%  { transform: scaleX(.04);  opacity: .55; }
+  50%  { transform: scaleX(-.04); opacity: .55; }
+  99%  { transform: scaleX(-1);   opacity: 1; }
+  100% { transform: scaleX(1);    opacity: 1; }
+}
+.globe-cities .city {
+  fill: #BFD8FF; transform-box: fill-box; transform-origin: center;
+  animation: city-pulse 2.4s ease-in-out infinite;
+}
+.globe-cities .c2 { animation-delay: .4s; }
+.globe-cities .c3 { animation-delay: .8s;  fill: #FFD89A; }
+.globe-cities .c4 { animation-delay: 1.2s; }
+.globe-cities .c5 { animation-delay: 1.6s; fill: #FFD89A; }
+.globe-cities .c6 { animation-delay: 2.0s; }
+@keyframes city-pulse {
+  0%, 100% { transform: scale(.7); opacity: .55; }
+  50%      { transform: scale(1.4); opacity: 1; }
+}
+.globe-arcs .arc {
+  stroke: rgba(123,179,255,.85); stroke-width: .9;
+  stroke-dasharray: 6 220; stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 4px rgba(123,179,255,.65));
+  animation: arc-travel 3.6s linear infinite;
+}
+.globe-arcs .a2 { animation-delay: .9s;  stroke: rgba(255,216,154,.9); filter: drop-shadow(0 0 4px rgba(255,216,154,.6)); }
+.globe-arcs .a3 { animation-delay: 1.8s; }
+.globe-arcs .a4 { animation-delay: 2.7s; stroke: rgba(255,216,154,.85); filter: drop-shadow(0 0 4px rgba(255,216,154,.55)); }
+@keyframes arc-travel {
+  0%   { stroke-dashoffset: 220; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { stroke-dashoffset: -10; opacity: 0; }
+}
+.orbit-group { transform-box: fill-box; transform-origin: center; animation: orbit-tilt 8s ease-in-out infinite alternate; }
+@keyframes orbit-tilt { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+.satellite {
+  transform-box: fill-box; transform-origin: 0 0;
+  animation: sat-spin 6s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(123,179,255,.9));
+}
+@keyframes sat-spin {
+  from { transform: rotate(0) translate(115px,0) scale(1); }
+  50%  { transform: rotate(180deg) translate(115px,0) scale(.7); }
+  to   { transform: rotate(360deg) translate(115px,0) scale(1); }
+}
+.intro-stage { position: relative; text-align: center; padding: 0 40px; z-index: 2; }
+.intro-mark {
+  display: inline-flex; align-items: center; gap: 12px; margin-bottom: 28px;
+  opacity: 0; transform: translateY(8px); animation: intro-rise .55s ease .1s forwards;
+}
+.intro-mark-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 58px; height: 40px; border-radius: 9px;
+  background: linear-gradient(135deg, #EA580C 0%, #FDB079 100%);
+  color: white; font-weight: 800; font-size: 15px; letter-spacing: 1px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset, 0 8px 20px rgba(0,0,0,.35);
+}
+.intro-mark-tag { font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.intro-title {
+  font-family: inherit; font-size: clamp(40px,7vw,80px);
+  font-weight: 800; letter-spacing: 4px; line-height: 1; margin: 0; color: white;
+  text-shadow: 0 2px 24px rgba(10,24,69,.85), 0 0 60px rgba(36,82,222,.55);
+  display: inline-flex; flex-wrap: wrap; justify-content: center;
+}
+.intro-title .iw {
+  display: inline-block; opacity: 0; transform: translateY(26px) scale(.92);
+  animation: intro-letter .55s cubic-bezier(.22,1,.36,1) forwards;
+  animation-delay: calc(.3s + var(--i) * 60ms);
+}
+.intro-title .iw-gap { display: inline-block; width: .55em; }
+.intro-title .iw-accent {
+  background: linear-gradient(180deg, #FFFFFF 0%, #B6C8FF 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+@keyframes intro-letter { to { opacity: 1; transform: translateY(0) scale(1); } }
+.intro-sub {
+  display: flex; align-items: center; gap: 14px; justify-content: center;
+  margin: 34px auto 0; opacity: 0; animation: intro-rise .6s ease 1.7s forwards;
+}
+.intro-line {
+  display: inline-block; height: 1px; width: 80px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+}
+.intro-sub-text { font-size: 13px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.78); }
+.intro-meta {
+  position: absolute; bottom: -110px; left: 50%; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 8px 18px; border-radius: 24px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(8px);
+  opacity: 0; animation: intro-fade-up .55s ease 2.1s forwards;
+}
+.intro-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ADE80; box-shadow: 0 0 0 4px rgba(74,222,128,.22);
+  animation: intro-pulse 1.4s ease-in-out infinite;
+}
+@keyframes intro-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(74,222,128,.22); }
+  50%       { box-shadow: 0 0 0 8px rgba(74,222,128,.05); }
+}
+.intro-meta-text { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.85); letter-spacing: .5px; }
+.intro-meta-date { font-size: 11.5px; font-weight: 600; padding: 2px 10px; border-radius: 10px; background: rgba(255,255,255,.14); color: white; }
+@keyframes intro-rise { to { opacity: 1; transform: translateY(0); } }
+@keyframes intro-fade-up {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes intro-fade-out {
+  from { opacity: 1; visibility: visible; }
+  to   { opacity: 0; visibility: hidden; }
 }
 </style>
 </head>
 <body>
+
+<!-- 인트로 스플래시 -->
+<div id="intro-splash" aria-hidden="true">
+  <div class="intro-bg-grid"></div>
+  <div class="intro-stars"></div>
+  <div class="intro-globe-wrap" aria-hidden="true">
+    <svg class="intro-globe" viewBox="-130 -130 260 260" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="globeFill" cx="32%" cy="30%" r="78%">
+          <stop offset="0%"  stop-color="#7BB3FF" stop-opacity=".55"/>
+          <stop offset="35%" stop-color="#2452DE" stop-opacity=".40"/>
+          <stop offset="70%" stop-color="#0A1845" stop-opacity=".85"/>
+          <stop offset="100%" stop-color="#020824" stop-opacity=".95"/>
+        </radialGradient>
+        <radialGradient id="globeHi" cx="28%" cy="24%" r="38%">
+          <stop offset="0%"  stop-color="#ffffff" stop-opacity=".65"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="atmos" cx="50%" cy="50%" r="55%">
+          <stop offset="78%" stop-color="#5B8DEF" stop-opacity="0"/>
+          <stop offset="92%" stop-color="#7BB3FF" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#7BB3FF" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="terminator" cx="100%" cy="50%" r="80%">
+          <stop offset="55%" stop-color="#000018" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#000010" stop-opacity=".55"/>
+        </radialGradient>
+        <clipPath id="globeClip"><circle cx="0" cy="0" r="92"/></clipPath>
+        <filter id="cityGlow" x="-300%" y="-300%" width="600%" height="600%">
+          <feGaussianBlur stdDeviation="2.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <circle cx="0" cy="0" r="120" fill="url(#atmos)"/>
+      <g transform="rotate(-18)">
+        <circle cx="0" cy="0" r="92" fill="url(#globeFill)"/>
+        <g clip-path="url(#globeClip)" stroke="rgba(160,200,255,.22)" stroke-width=".55" fill="none">
+          <ellipse cx="0" cy="0" rx="92" ry="14"/>
+          <ellipse cx="0" cy="-32" rx="86" ry="11"/>
+          <ellipse cx="0" cy="32" rx="86" ry="11"/>
+          <ellipse cx="0" cy="-58" rx="72" ry="8.5"/>
+          <ellipse cx="0" cy="58" rx="72" ry="8.5"/>
+          <ellipse cx="0" cy="-78" rx="48" ry="5.5"/>
+          <ellipse cx="0" cy="78" rx="48" ry="5.5"/>
+        </g>
+        <g class="globe-spin" clip-path="url(#globeClip)" stroke="rgba(180,210,255,.42)" stroke-width=".7" fill="none">
+          <ellipse cx="0" cy="0" rx="92" ry="92"/>
+          <ellipse cx="0" cy="0" rx="78" ry="92"/>
+          <ellipse cx="0" cy="0" rx="56" ry="92"/>
+          <ellipse cx="0" cy="0" rx="30" ry="92"/>
+          <line x1="0" y1="-92" x2="0" y2="92" stroke="rgba(190,220,255,.65)"/>
+        </g>
+        <g class="globe-spin" clip-path="url(#globeClip)" fill="rgba(91,141,239,.35)" stroke="rgba(180,210,255,.35)" stroke-width=".4">
+          <path d="M -68 -28 Q -50 -52 -18 -50 Q 8 -48 25 -38 Q 48 -32 60 -18 Q 68 -5 55 5 Q 35 12 18 8 Q -2 14 -22 8 Q -45 6 -60 -8 Q -72 -18 -68 -28 Z"/>
+          <path d="M -8 8 Q 8 6 18 18 Q 22 38 12 58 Q -2 70 -14 60 Q -22 42 -18 22 Q -16 10 -8 8 Z"/>
+          <path d="M -88 -10 Q -76 -22 -68 -8 Q -64 8 -72 22 Q -78 42 -86 52 Q -92 62 -88 72 Q -82 78 -74 70 Q -70 58 -64 48 Q -58 32 -60 18 Q -58 4 -64 -8 Q -78 -16 -88 -10 Z"/>
+          <path d="M 38 38 Q 58 32 70 42 Q 76 56 62 64 Q 46 68 34 58 Q 28 48 38 38 Z"/>
+          <path d="M -90 82 Q -50 78 -10 80 Q 30 82 70 80 Q 90 82 90 88 Q 50 92 0 92 Q -50 92 -90 88 Z"/>
+        </g>
+        <g class="globe-cities" filter="url(#cityGlow)">
+          <circle class="city c1" cx="-36" cy="-22" r="2.1"/>
+          <circle class="city c2" cx="18"  cy="-16" r="2.1"/>
+          <circle class="city c3" cx="56"  cy="6"   r="2.1"/>
+          <circle class="city c4" cx="-12" cy="38"  r="2.1"/>
+          <circle class="city c5" cx="-72" cy="14"  r="2.1"/>
+          <circle class="city c6" cx="40"  cy="48"  r="2.1"/>
+        </g>
+        <g class="globe-arcs" fill="none" stroke-linecap="round">
+          <path class="arc a1" d="M -36 -22 Q 0 -78 56 6"/>
+          <path class="arc a2" d="M 18 -16 Q -10 -52 -72 14"/>
+          <path class="arc a3" d="M -12 38 Q 30 -10 56 6"/>
+          <path class="arc a4" d="M 40 48 Q -20 0 -36 -22"/>
+        </g>
+        <circle cx="0" cy="0" r="92" fill="url(#terminator)" pointer-events="none"/>
+        <circle cx="0" cy="0" r="92" fill="url(#globeHi)" pointer-events="none"/>
+        <circle cx="0" cy="0" r="92" fill="none" stroke="rgba(180,210,255,.45)" stroke-width=".9"/>
+      </g>
+      <g class="orbit-group">
+        <ellipse cx="0" cy="0" rx="115" ry="30" fill="none" stroke="rgba(123,179,255,.35)" stroke-width=".7" stroke-dasharray="2 4"/>
+        <circle class="satellite" r="2.4" cx="115" cy="0" fill="#7BB3FF"/>
+      </g>
+    </svg>
+  </div>
+  <div class="intro-sweep"></div>
+  <div class="intro-stage">
+    <h1 class="intro-title" aria-label="DAEWOONG SCM Team">
+      <span class="iw" style="--i:0">D</span><span class="iw" style="--i:1">A</span><span class="iw" style="--i:2">E</span><span class="iw" style="--i:3">W</span><span class="iw" style="--i:4">O</span><span class="iw" style="--i:5">O</span><span class="iw" style="--i:6">N</span><span class="iw" style="--i:7">G</span><span class="iw-gap"></span><span class="iw iw-accent" style="--i:9">S</span><span class="iw iw-accent" style="--i:10">C</span><span class="iw iw-accent" style="--i:11">M</span><span class="iw-gap"></span><span class="iw" style="--i:13">T</span><span class="iw" style="--i:14">e</span><span class="iw" style="--i:15">a</span><span class="iw" style="--i:16">m</span>
+    </h1>
+    <div class="intro-sub">
+      <span class="intro-line"></span>
+      <span class="intro-sub-text">Supply Chain Management · 업무 통합 캘린더</span>
+      <span class="intro-line"></span>
+    </div>
+    <div class="intro-meta">
+      <span class="intro-dot"></span>
+      <span class="intro-meta-text">시스템 준비중…</span>
+      <span class="intro-meta-date" id="splash-date"></span>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- 헤더 -->
@@ -546,7 +1099,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
       <div style="width:1px;height:18px;background:var(--border);"></div>
       <!-- ② 상태 범례 -->
       <span style="display:flex;align-items:center;gap:3px;"><span class="sdot sdot-done"></span>완료</span>
-      <span style="display:flex;align-items:center;gap:3px;"><span class="sdot sdot-progress"></span>진행중</span>
+      <span style="display:flex;align-items:center;gap:3px;"><span class="sdot sdot-in_progress"></span>진행중</span>
       <span style="display:flex;align-items:center;gap:3px;"><span class="sdot sdot-delayed"></span>지연</span>
     </div>
   </header>
@@ -577,6 +1130,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
         <h2 id="cal-title"></h2>
         <button id="next-month">&#8250;</button>
       </div>
+      <div id="month-summary" class="month-summary"></div>
       <!-- 매일 반복 업무 패널 (캘린더 밖) -->
       <div class="daily-panel" id="daily-panel" style="display:none">
         <div class="daily-panel-hd">
@@ -591,11 +1145,11 @@ tr.data-row:hover .btn-row-del { display: flex; }
         <div>
           <div class="cal-grid">
             <div class="cal-weekdays">
-              <div class="cal-weekday">월</div>
-              <div class="cal-weekday">화</div>
-              <div class="cal-weekday">수</div>
-              <div class="cal-weekday">목</div>
-              <div class="cal-weekday">금</div>
+              <div class="cal-weekday"><span class="ko">월</span><span class="en">MON</span></div>
+              <div class="cal-weekday"><span class="ko">화</span><span class="en">TUE</span></div>
+              <div class="cal-weekday"><span class="ko">수</span><span class="en">WED</span></div>
+              <div class="cal-weekday"><span class="ko">목</span><span class="en">THU</span></div>
+              <div class="cal-weekday"><span class="ko">금</span><span class="en">FRI</span></div>
             </div>
             <div class="cal-body" id="cal-body">
               <div class="loading"><div class="spinner"></div></div>
@@ -609,6 +1163,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
             <div class="day-side-title" id="day-side-title">날짜를 클릭하세요</div>
             <div class="day-side-sub" id="day-side-sub"></div>
           </div>
+          <div id="day-side-meta" class="ds-day-meta" style="display:none"></div>
           <div class="day-side-body" id="day-side-body">
             <div class="day-side-empty">날짜를 클릭하면<br>해당 일의 업무를<br>전체 확인할 수 있습니다</div>
           </div>
@@ -617,13 +1172,8 @@ tr.data-row:hover .btn-row-del { display: flex; }
     </div>
 
     <!-- 목록 뷰 -->
-    <div id="list-view" style="display:none;">
-      <div class="list-view-header">
-        <h2>업무 목록</h2>
-        <!-- ⑤ 업무 추가 버튼 -->
-        <button class="btn-add-task" id="btn-add-task">＋ 업무 추가</button>
-      </div>
-      <div id="list-sections">
+    <div id="list-view" class="list-view" style="display:none;">
+      <div id="list-content">
         <div class="loading"><div class="spinner"></div></div>
       </div>
     </div>
@@ -631,6 +1181,11 @@ tr.data-row:hover .btn-row-del { display: flex; }
 
   </div>
 </div>
+
+<!-- FAB -->
+<button class="fab" id="fab-add">
+  <span class="plus">＋</span> 업무 추가
+</button>
 
 <!-- 날짜 팝업 -->
 <div class="day-popup-overlay hidden" id="day-popup-overlay">
@@ -762,6 +1317,8 @@ const state = {
   filters: { 파트: "", 주기: "", 구분: "", 주인: "" },
   sortCol: "", sortDir: 1,
   modal: { taskId: null, periodKey: null, selectedStatus: null },
+  listSearch: "",
+  listCycleFilter: "all",
 };
 
 // ── API ──────────────────────────────────────────────────────
@@ -811,8 +1368,7 @@ function catTag(task) {
 
 // ② 신호등 dot HTML
 function sdot(status) {
-  const cls = status === "in_progress" ? "progress" : (status || "pending");
-  return `<span class="sdot sdot-${cls}"></span>`;
+  return `<span class="sdot sdot-${status || "pending"}"></span>`;
 }
 
 // ② 신호등 label (목록용)
@@ -888,6 +1444,58 @@ function onFilterChange() {
   else if (state.view === "list") renderList();
 }
 
+// ── 월간 요약 카드 ───────────────────────────────────────────
+function renderMonthSummary(events, tasks) {
+  const el = document.getElementById("month-summary");
+  if (!el) return;
+  // Collect non-daily task statuses across all events this month
+  const counts = { total: 0, done: 0, in_progress: 0, delayed: 0, pending: 0 };
+  const seen = new Set();
+  for (const [, evts] of Object.entries(events)) {
+    for (const ev of evts) {
+      const t = tasks[ev.task_id];
+      if (!t || t.주기 === "매일") continue;
+      const key = `${ev.task_id}|${ev.period_key}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      counts.total++;
+      const s = ev.status || "pending";
+      if (s === "done") counts.done++;
+      else if (s === "in_progress") counts.in_progress++;
+      else if (s === "delayed") counts.delayed++;
+      else counts.pending++;
+    }
+  }
+  const pct = counts.total > 0 ? Math.round(counts.done / counts.total * 100) : 0;
+  el.innerHTML = `
+    <div class="ms-card total">
+      <div class="ms-label">전체</div>
+      <div class="ms-value"><strong>${counts.total}</strong><span class="ms-unit">건</span></div>
+      <div class="ms-sub">이번 달 등록 업무</div>
+      <div class="ms-progress" style="--p:${pct}"><span>${pct}%</span></div>
+    </div>
+    <div class="ms-card done">
+      <div class="ms-label">완료</div>
+      <div class="ms-value"><strong>${counts.done}</strong><span class="ms-unit">건</span></div>
+      <div class="ms-sub">${counts.total > 0 ? Math.round(counts.done/counts.total*100) : 0}% 달성</div>
+    </div>
+    <div class="ms-card prog">
+      <div class="ms-label">진행중</div>
+      <div class="ms-value"><strong>${counts.in_progress}</strong><span class="ms-unit">건</span></div>
+      <div class="ms-sub">처리 중인 업무</div>
+    </div>
+    <div class="ms-card delay">
+      <div class="ms-label">지연</div>
+      <div class="ms-value"><strong>${counts.delayed}</strong><span class="ms-unit">건</span></div>
+      <div class="ms-sub">기한 초과 업무</div>
+    </div>
+    <div class="ms-card pend">
+      <div class="ms-label">대기</div>
+      <div class="ms-value"><strong>${counts.pending}</strong><span class="ms-unit">건</span></div>
+      <div class="ms-sub">아직 미착수</div>
+    </div>`;
+}
+
 // ── 캘린더 ───────────────────────────────────────────────────
 async function loadCalendar() {
   document.getElementById("cal-body").innerHTML = '<div class="loading"><div class="spinner"></div></div>';
@@ -905,6 +1513,7 @@ function renderCalendar() {
 
   document.getElementById("cal-title").textContent = `${year}년 ${MONTH_KO[month]}`;
   renderDailyPanel(tasks);
+  renderMonthSummary(events, tasks);
 
   const firstWd = (new Date(year, month - 1, 1).getDay() + 6) % 7;
   const lastDay = new Date(year, month, 0).getDate();
@@ -938,7 +1547,22 @@ function renderCalendar() {
     // 항목 많으면 2단 (더보기 없이 전부 표시)
     const twoCol = rawEvts.length >= 4;
 
+    // Compute status counts for day stripe
+    const sc = { done:0, in_progress:0, delayed:0, pending:0, skipped:0 };
+    for (const ev of rawEvts) sc[ev.status || "pending"] = (sc[ev.status || "pending"] || 0) + 1;
+    const stripeSegs = rawEvts.length > 0 ? [
+      sc.done        > 0 ? `<i class="s-done" style="flex:${sc.done}"></i>` : "",
+      sc.in_progress > 0 ? `<i class="s-prog" style="flex:${sc.in_progress}"></i>` : "",
+      sc.delayed     > 0 ? `<i class="s-del"  style="flex:${sc.delayed}"></i>` : "",
+      sc.pending     > 0 ? `<i class="s-pen"  style="flex:${sc.pending}"></i>` : "",
+      sc.skipped     > 0 ? `<i class="s-skp"  style="flex:${sc.skipped}"></i>` : "",
+    ].join("") : "";
+
     html += `<div class="cal-cell${isToday?" today":""}" data-date="${ds}">`;
+    if (rawEvts.length > 0) {
+      html += `<div class="day-stripe">${stripeSegs}</div>`;
+      html += `<div class="cell-count">${rawEvts.length}</div>`;
+    }
     html += `<div class="day-num">${d}</div>`;
     html += `<div class="day-events${twoCol?" two-col":""}">`;
 
@@ -1018,11 +1642,37 @@ function renderSidePanel(ds, evts) {
   const tasks = state.calData?.tasks || {};
   const [y, m, d] = ds.split("-");
   const dow = ["일","월","화","수","목","금","토"][new Date(+y, +m-1, +d).getDay()];
-  const today = new Date();
-  const isToday = today.getFullYear() === +y && today.getMonth()+1 === +m && today.getDate() === +d;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const selDate = new Date(+y, +m-1, +d);
+  const diffDays = Math.round((selDate - today) / 86400000);
+  let relLabel;
+  if (diffDays === 0) relLabel = "오늘";
+  else if (diffDays > 0) relLabel = `D+${diffDays}`;
+  else relLabel = `D${diffDays}`;
 
-  document.getElementById("day-side-title").textContent = `${+m}월 ${+d}일 (${dow})${isToday?" · 오늘":""}`;
+  document.getElementById("day-side-title").innerHTML =
+    `<span class="day-side-day-num">${+d}</span>${+m}월 ${+d}일 (${dow})<span class="day-side-rel">${relLabel}</span>`;
   document.getElementById("day-side-sub").textContent = `${evts.length}건의 업무`;
+
+  // Status meta pills
+  const metaEl = document.getElementById("day-side-meta");
+  if (metaEl) {
+    if (evts.length > 0) {
+      const sc = { done: 0, in_progress: 0, delayed: 0, pending: 0 };
+      for (const ev of evts) {
+        const s = ev.status || "pending";
+        if (s in sc) sc[s]++;
+      }
+      metaEl.style.display = "";
+      metaEl.innerHTML = `
+        <div class="pill"><span class="sdot sdot-done"></span>완료 <b>${sc.done}</b></div>
+        <div class="pill"><span class="sdot sdot-in_progress"></span>진행중 <b>${sc.in_progress}</b></div>
+        <div class="pill"><span class="sdot sdot-delayed"></span>지연 <b>${sc.delayed}</b></div>
+        <div class="pill"><span class="sdot sdot-pending"></span>대기 <b>${sc.pending}</b></div>`;
+    } else {
+      metaEl.style.display = "none";
+    }
+  }
 
   const body = document.getElementById("day-side-body");
   if (!evts.length) {
@@ -1111,7 +1761,6 @@ async function loadList() {
       api.get(`/api/calendar/${state.year}/${state.month}`),
     ]);
     state.allTasks = tasks;
-    // period_key 별 최신 상태 집계 (task_id → { period_key → status })
     state.listStatuses = {};
     for (const evts of Object.values(calData.events || {})) {
       for (const ev of evts) {
@@ -1121,14 +1770,92 @@ async function loadList() {
     }
     renderList();
   } catch(e) {
-    document.getElementById("list-sections").innerHTML = `<div style="padding:20px;color:red;">오류: ${e.message}</div>`;
+    document.getElementById("list-content").innerHTML = `<div style="padding:20px;color:red;">오류: ${e.message}</div>`;
   }
+}
+
+// ── 시기 문자열 → 당월 실제 영업일 계산 ──────────────────────
+function resolveSigi(sigi, year, month) {
+  if (!sigi) return null;
+  const s = sigi.trim();
+  const last = new Date(year, month, 0).getDate();
+  const wd = d => (new Date(year, month - 1, d).getDay() + 6) % 7; // 0=월…4=금, 5=토, 6=일
+
+  const firstBiz = () => { let d = 1; while (wd(d) >= 5) d++; return d; };
+  const lastBiz  = () => { let d = last; while (wd(d) >= 5) d--; return d; };
+  const toBiz    = n => {
+    const d = Math.min(Math.max(n, 1), last);
+    const w = wd(d);
+    if (w === 5) { const n2 = d + 2; return n2 <= last ? n2 : d - 1; }
+    if (w === 6) { const n2 = d + 1; return n2 <= last ? n2 : d - 2; }
+    return d;
+  };
+  const nthOf = (n, targetWd) => {
+    let c = 0;
+    for (let d = 1; d <= last; d++) if (wd(d) === targetWd) { c++; if (c === n) return d; }
+    return 0;
+  };
+  const WD = { "월": 0, "화": 1, "수": 2, "목": 3, "금": 4 };
+
+  // 월말 / 말일 / 당월 말일
+  if (s.includes("말일") || s.includes("월말") || s.includes("당월 말")) return [lastBiz()];
+  // 첫 영업일
+  if (s.includes("첫 영업일") || s.includes("첫영업일") || s.includes("매월 첫") || s.includes("첫째주") || s.includes("월초")) return [firstBiz()];
+  // 결산
+  if (s.includes("결산")) return [toBiz(25)];
+  // 중순~말
+  if (s.includes("중순~말")) return [toBiz(20)];
+  // 중순
+  if (s.includes("중순")) return [toBiz(15)];
+  // 월 2회
+  if (s.includes("월 2회") || s.includes("월2회")) return [toBiz(10), toBiz(25)];
+  // N/M주차 요일 (예: '2/4주차 목요일')
+  const m1 = s.match(/(\d)\/(\d)주차\s*([월화수목금])/);
+  if (m1) return [nthOf(+m1[1], WD[m1[3]]), nthOf(+m1[2], WD[m1[3]])].filter(Boolean);
+  // 복합 콤마 (예: '3주차 월요일, 4주차 금요일') — 최대 2개
+  if (s.includes(",")) {
+    const parts = s.split(",").map(p => p.trim());
+    const days = [];
+    for (const p of parts) {
+      const m = p.match(/(\d)주차\s*([월화수목금])/);
+      if (m) { const d = nthOf(+m[1], WD[m[2]]); if (d) days.push(d); }
+    }
+    if (days.length) return days;
+  }
+  // N주차 요일
+  const m2 = s.match(/(\d)주차\s*([월화수목금])/);
+  if (m2) { const d = nthOf(+m2[1], WD[m2[2]]); return d ? [d] : null; }
+  // N주차 단독
+  const m3 = s.match(/(\d)주차/);
+  if (m3) { const d = nthOf(+m3[1], 0); return d ? [d] : null; }
+  // N일
+  const m4 = s.match(/(\d+)일/);
+  if (m4) { const n = +m4[1]; if (n >= 1 && n <= 31) return [toBiz(n)]; }
+  // 수시
+  if (s.includes("수시")) return [firstBiz()];
+
+  return null;
+}
+
+const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
+function fmtResolvedDays(days, year, month) {
+  if (!days || !days.length) return "";
+  return days.map(d => {
+    const dow = DOW_KO[new Date(year, month - 1, d).getDay()];
+    return `<span class="sigi-date">${month}/${d}(${dow})</span>`;
+  }).join(" ");
 }
 
 function renderList() {
   const CYCLE_ORDER = { "매일": 0, "매주": 1, "매월": 2 };
+  const PARTS = ["SCM쉐어드파트", "수출입파트"];
+  const partConf = {
+    "SCM쉐어드파트": { short: "SCM",  color: "scm", mainCss: "--scm-main", lightCss: "--scm-light", borderCss: "--scm-border" },
+    "수출입파트":    { short: "수출입", color: "exp", mainCss: "--exp-main", lightCss: "--exp-light", borderCss: "--exp-border" },
+  };
 
-  const tasks = state.allTasks.filter(t => {
+  // Base filter (from filter bar)
+  const baseFiltered = state.allTasks.filter(t => {
     const f = state.filters;
     if (f.파트 && t.파트 !== f.파트) return false;
     if (f.주기 && t.주기 !== f.주기) return false;
@@ -1137,13 +1864,27 @@ function renderList() {
     return true;
   });
 
-  const container = document.getElementById("list-sections");
+  // Cycle counts (from base filtered, before search/cycle tab)
+  const cycleCounts = { 매일: 0, 매주: 0, 매월: 0 };
+  for (const t of baseFiltered) cycleCounts[t.주기] = (cycleCounts[t.주기] || 0) + 1;
 
-  if (!tasks.length) {
-    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">표시할 업무가 없습니다.</div>';
-    return;
-  }
+  // Apply search
+  const sq = (state.listSearch || "").trim().toLowerCase();
+  let tasks = sq ? baseFiltered.filter(t =>
+    (t.업무 || "").toLowerCase().includes(sq) ||
+    (t.주인 || "").toLowerCase().includes(sq) ||
+    (t.구분 || "").toLowerCase().includes(sq) ||
+    (t.output || "").toLowerCase().includes(sq) ||
+    (t.시기_마감 || "").toLowerCase().includes(sq)
+  ) : baseFiltered;
 
+  // Apply cycle filter
+  const cf = state.listCycleFilter || "all";
+  if (cf !== "all") tasks = tasks.filter(t => t.주기 === cf);
+
+  const container = document.getElementById("list-content");
+
+  // Sort
   const sortGroup = arr => [...arr].sort((a, b) => {
     const co = (CYCLE_ORDER[a.주기] ?? 99) - (CYCLE_ORDER[b.주기] ?? 99);
     if (co !== 0) return co;
@@ -1154,110 +1895,156 @@ function renderList() {
     return 0;
   });
 
-  const makeTable = arr => {
-    const sorted = sortGroup(arr);
-    const si = col => state.sortCol === col ? (state.sortDir === 1 ? " sort-asc" : " sort-desc") : "";
-    const CYCLE_KO = { "매일": "매일 Daily", "매주": "매주 Weekly", "매월": "매월 Monthly" };
-
-    let lastCycle = null;
-    const rows = sorted.map(t => {
-      let sep = "";
-      if (t.주기 !== lastCycle) {
-        lastCycle = t.주기;
-        sep = `<tr class="cycle-sep"><td colspan="7">${CYCLE_KO[t.주기] || t.주기}</td></tr>`;
-      }
-      const 구분Html = t.구분
-        ? `<span class="list-cat">${escHtml(t.구분)}</span>` : "";
-      const 시기Html = t.시기_마감
-        ? `<span class="list-meta">${escHtml(t.시기_마감)}</span>` : "";
-      const 주인Html = t.주인
-        ? `<span class="list-owner">${escHtml(t.주인)}</span>` : `<span class="list-empty">—</span>`;
-      const statusHtml = listStatusHtml(t.id, t.주기);
-      return sep + `
-        <tr class="data-row" data-id="${t.id}">
-          <td>${badgeCycle(t.주기||"")}</td>
-          <td>${구분Html}</td>
-          <td class="td-task">${escHtml(t.업무)}</td>
-          <td>${주인Html}</td>
-          <td style="text-align:center">${statusHtml}</td>
-          <td>${시기Html}</td>
-          <td class="td-del">
-            <button class="btn-row-del" data-id="${t.id}" title="삭제">✕</button>
-          </td>
-        </tr>`;
-    }).join("");
-
-    const mo = MONTH_KO[state.month];
-    return `
-      <div class="list-table-wrap">
-        <table>
-          <colgroup>
-            <col style="width:56px">
-            <col style="width:72px">
-            <col>
-            <col style="width:72px">
-            <col style="width:96px">
-            <col style="width:104px">
-            <col style="width:32px">
-          </colgroup>
-          <thead>
-            <tr>
-              <th data-col="주기" class="${si("주기")}">주기</th>
-              <th data-col="구분" class="${si("구분")}">분류</th>
-              <th data-col="업무" class="${si("업무")}">업무명</th>
-              <th data-col="주인" class="${si("주인")}">담당자</th>
-              <th style="text-align:center">${mo} 현황</th>
-              <th data-col="시기_마감" class="${si("시기_마감")}">시기/마감</th>
-              <th class="td-del"></th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
+  // Get best status for a task in this month
+  const statusOfTask = t => {
+    if (t.주기 === "매일") return null;
+    const byKey = state.listStatuses[t.id] || {};
+    const entries = Object.entries(byKey);
+    if (!entries.length) return "pending";
+    const pri = { delayed: 0, in_progress: 1, pending: 2, skipped: 3, done: 4 };
+    return entries.sort((a, b) => (pri[a[1]] ?? 99) - (pri[b[1]] ?? 99))[0][1];
   };
 
-  const groups = [
-    { key: "수출입파트", label: "수출입파트", badgeCls: "badge-trade",
-      tasks: tasks.filter(t => t.파트 === "수출입파트") },
-    { key: "SCM쉐어드파트", label: "SCM쉐어드파트", badgeCls: "badge-scm",
-      tasks: tasks.filter(t => t.파트 === "SCM쉐어드파트") },
-  ].filter(g => g.tasks.length > 0);
+  const si = col => state.sortCol === col ? (state.sortDir === 1 ? " active sort-asc" : " active sort-desc") : "";
 
-  container.innerHTML = groups.map(g => `
-    <div class="list-section">
-      <div class="list-section-header">
-        <span class="badge ${g.badgeCls}">${g.label}</span>
-        <span class="list-section-count">${g.tasks.length}건</span>
+  // 시기/마감 셀: 텍스트 + 당월 실제 영업일 배지
+  const sigiCell = t => {
+    if (!t.시기_마감) return '<span class="td-dash">—</span>';
+    let html = escHtml(t.시기_마감);
+    if (t.주기 === "매월") {
+      const days = resolveSigi(t.시기_마감, state.year, state.month);
+      if (days && days.length) html += "<br>" + fmtResolvedDays(days, state.year, state.month);
+    }
+    return html;
+  };
+
+  const makePanel = partKey => {
+    const conf = partConf[partKey];
+    const partTasks = tasks.filter(t => t.파트 === partKey);
+    const sorted = sortGroup(partTasks);
+    const dailyN   = partTasks.filter(t => t.주기 === "매일").length;
+    const weeklyN  = partTasks.filter(t => t.주기 === "매주").length;
+    const monthlyN = partTasks.filter(t => t.주기 === "매월").length;
+
+    const rows = sorted.map(t => {
+      const status = statusOfTask(t);
+      const 구분Html = t.구분 ? `<span class="cat-pill">${escHtml(t.구분)}</span>` : `<span class="td-dash">—</span>`;
+      const noteHtml = (t.비고 || t.output) ? `<div class="td-task-note">${
+        t.output ? `<span class="td-output-inline">Output: ${escHtml(t.output)}</span>` : ""
+      }${t.output && t.비고 ? `<span style="margin:0 4px;opacity:.4">·</span>` : ""}${t.비고 ? escHtml(t.비고) : ""}</div>` : "";
+      const statusHtml = status
+        ? `<span class="status-pill s-${status}">${sdot(status)}${STATUS_LABEL[status] || status}</span>`
+        : `<span class="td-dash">—</span>`;
+      const byKey = state.listStatuses[t.id] || {};
+      const keys = Object.keys(byKey);
+      const pk = t.주기 === "매월"
+        ? `${state.year}-${String(state.month).padStart(2,"0")}`
+        : (keys.length ? keys[keys.length - 1] : `${state.year}-${String(state.month).padStart(2,"0")}-14`);
+      return `<tr class="data-row" data-id="${t.id}" data-pk="${escHtml(pk)}">
+        <td><span class="badge badge-${t.주기==="매일"?"daily":t.주기==="매주"?"weekly":"monthly"}">${escHtml(t.주기||"")}</span></td>
+        <td class="td-cat">${구분Html}</td>
+        <td class="td-task"><div class="td-task-name">${escHtml(t.업무)}</div>${noteHtml}</td>
+        <td class="td-owner">${t.주인 ? escHtml(t.주인) : '<span class="td-dash">—</span>'}</td>
+        <td class="td-sigi">${sigiCell(t)}</td>
+        <td class="td-status">${statusHtml}</td>
+      </tr>`;
+    }).join("");
+
+    return `<div class="part-panel part-${conf.color}">
+      <div class="part-panel-hd">
+        <span class="part-panel-mark" style="background:var(${conf.lightCss});color:var(${conf.mainCss});border:1px solid var(${conf.borderCss})">${conf.short}</span>
+        <h3>${escHtml(partKey)}</h3>
+        <span class="part-panel-cnt">${partTasks.length}건</span>
+        <span class="part-panel-meta">
+          <span class="ppc"><span class="badge badge-daily">매일</span>${dailyN}</span>
+          <span class="ppc"><span class="badge badge-weekly">매주</span>${weeklyN}</span>
+          <span class="ppc"><span class="badge badge-monthly">매월</span>${monthlyN}</span>
+        </span>
       </div>
-      ${makeTable(g.tasks)}
-    </div>`).join("");
+      <div class="list-table-wrap part-table">
+        <table>
+          <thead><tr>
+            <th class="sortable${si("주기")}" data-col="주기" style="width:60px">주기</th>
+            <th class="sortable${si("구분")}" data-col="구분" style="width:80px">구분</th>
+            <th class="sortable${si("업무")}" data-col="업무">업무</th>
+            <th class="sortable${si("주인")}" data-col="주인" style="width:90px">담당자</th>
+            <th class="sortable${si("시기_마감")}" data-col="시기_마감" style="width:115px">시기/마감</th>
+            <th style="width:100px">상태</th>
+          </tr></thead>
+          <tbody>${rows || `<tr><td colspan="6" class="td-empty">표시할 업무가 없습니다</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+  };
 
+  const scmCount = tasks.filter(t => t.파트 === "SCM쉐어드파트").length;
+  const expCount = tasks.filter(t => t.파트 === "수출입파트").length;
+
+  const cycleTabs = [
+    ["all",  "전체",  baseFiltered.length, ""],
+    ["매일", "매일",  cycleCounts["매일"] || 0, "k-daily"],
+    ["매주", "매주",  cycleCounts["매주"] || 0, "k-weekly"],
+    ["매월", "매월",  cycleCounts["매월"] || 0, "k-monthly"],
+  ].map(([k, label, n, cls]) =>
+    `<button class="cycle-tab${cf === k ? " active" : ""}${cls ? " " + cls : ""}" data-cycle="${k}">
+      <span>${label}</span><span class="cycle-count">${n}</span>
+    </button>`
+  ).join("") +
+  `<span class="cycle-tabs-sep"></span>
+   <span class="cycle-tabs-meta">SCM쉐어드 <b>${scmCount}</b>건 · 수출입 <b>${expCount}</b>건</span>`;
+
+  container.innerHTML = `
+    <div class="list-toolbar">
+      <div class="list-toolbar-left">
+        <h2>업무 목록</h2>
+        <span class="list-total">전체 <b>${state.allTasks.length}</b>건 · 표시 <b>${tasks.length}</b>건</span>
+      </div>
+      <div class="list-toolbar-right">
+        <div class="list-search">
+          <span class="ls-icon">⌕</span>
+          <input type="text" id="list-search-input" placeholder="업무명, 담당자, 구분, Output 검색" value="${escHtml(state.listSearch || "")}">
+          ${state.listSearch ? `<button class="ls-clear" id="ls-clear-btn">✕</button>` : ""}
+        </div>
+        <button class="btn-add" id="list-btn-add">＋ 업무 추가</button>
+      </div>
+    </div>
+    <div class="cycle-tabs">${cycleTabs}</div>
+    <div class="parts-grid">${PARTS.map(makePanel).join("")}</div>
+    ${tasks.length === 0 ? `<div class="list-empty-state">검색 결과가 없습니다.
+      <button class="btn-cancel" style="margin-left:10px" id="list-reset-btn">초기화</button></div>` : ""}`;
+
+  // Search input
+  const searchInput = document.getElementById("list-search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", e => { state.listSearch = e.target.value; renderList(); });
+    // Restore caret position
+    searchInput.focus();
+    const v = searchInput.value;
+    searchInput.value = "";
+    searchInput.value = v;
+    searchInput.blur();
+  }
+  const clearBtn = document.getElementById("ls-clear-btn");
+  if (clearBtn) clearBtn.addEventListener("click", () => { state.listSearch = ""; renderList(); });
+  const resetBtn = document.getElementById("list-reset-btn");
+  if (resetBtn) resetBtn.addEventListener("click", () => { state.listSearch = ""; state.listCycleFilter = "all"; renderList(); });
+
+  // Add task
+  const addBtn = document.getElementById("list-btn-add");
+  if (addBtn) addBtn.addEventListener("click", openTaskForm);
+
+  // Cycle tabs
+  container.querySelectorAll(".cycle-tab[data-cycle]").forEach(btn => {
+    btn.addEventListener("click", () => { state.listCycleFilter = btn.dataset.cycle; renderList(); });
+  });
+
+  // Row click
   container.querySelectorAll("tr.data-row").forEach(row => {
-    row.addEventListener("click", e => {
-      if (e.target.closest(".btn-row-del")) return;
-      openModal(+row.dataset.id, null);
-    });
+    row.addEventListener("click", () => openModal(+row.dataset.id, row.dataset.pk || null));
   });
 
-  // ⑤ 삭제 버튼
-  container.querySelectorAll(".btn-row-del").forEach(btn => {
-    btn.addEventListener("click", async e => {
-      e.stopPropagation();
-      const id = +btn.dataset.id;
-      const task = state.allTasks.find(t => t.id === id);
-      if (!confirm(`"${task?.업무}" 업무를 삭제할까요?\n관련 로그도 함께 삭제됩니다.`)) return;
-      try {
-        await api.del(`/api/tasks/${id}`);
-        await loadList();
-        state.calData = null;
-        if (state.view === "calendar") await loadCalendar();
-      } catch(ex) {
-        alert("삭제 실패: " + ex.message);
-      }
-    });
-  });
-
-  container.querySelectorAll("th[data-col]").forEach(th => {
+  // Sort
+  container.querySelectorAll("th.sortable[data-col]").forEach(th => {
     th.addEventListener("click", () => {
       const col = th.dataset.col;
       if (state.sortCol === col) state.sortDir *= -1;
@@ -1633,8 +2420,8 @@ document.getElementById("daily-panel-toggle").addEventListener("click", () => {
   btn.textContent = collapsed ? "펼치기 ▼" : "접기 ▲";
 });
 
-// ⑤ 업무 추가 모달 이벤트
-document.getElementById("btn-add-task").addEventListener("click", openTaskForm);
+// FAB + 업무 추가 모달 이벤트
+document.getElementById("fab-add").addEventListener("click", openTaskForm);
 document.getElementById("task-form-close").addEventListener("click", closeTaskForm);
 document.getElementById("task-form-cancel").addEventListener("click", closeTaskForm);
 document.getElementById("task-form-overlay").addEventListener("click", e => {
@@ -1645,6 +2432,21 @@ document.getElementById("task-form-submit").addEventListener("click", submitTask
 document.querySelectorAll(".preset-btn").forEach(btn => {
   btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
 });
+
+// ── 인트로 스플래시 ──────────────────────────────────────────
+(function() {
+  const splash = document.getElementById("intro-splash");
+  if (!splash) return;
+  const now = new Date();
+  const dateEl = document.getElementById("splash-date");
+  if (dateEl) dateEl.textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,"0")}`;
+  const cleanup = () => splash.classList.add("is-gone");
+  setTimeout(cleanup, 4500);
+  splash.addEventListener("click", () => {
+    splash.style.animation = "intro-fade-out .35s ease forwards";
+    setTimeout(cleanup, 400);
+  });
+})();
 
 // ── 초기 로드 ────────────────────────────────────────────────
 (async () => {
