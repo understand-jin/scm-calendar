@@ -252,15 +252,23 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
                 return nxt.day if nxt.month == month else (dt - timedelta(2)).day
             return dt.day
 
-        def nth_weekday(week: int, wd: int) -> int:
-            """월 내 N번째 wd 요일의 날짜 (없으면 0)"""
+        def nth_monday(week: int) -> int:
+            """월 내 N번째 월요일 날짜 (없으면 0) — 주차 계산 기준"""
             count = 0
             for d in range(1, last + 1):
-                if date(year, month, d).weekday() == wd:
+                if date(year, month, d).weekday() == 0:
                     count += 1
                     if count == week:
                         return d
             return 0
+
+        def week_n_day(week: int, wd: int) -> int:
+            """N주차(월요일 기준)의 wd 요일 날짜. wd: 월=0 화=1 수=2 목=3 금=4"""
+            mon = nth_monday(week)
+            if not mon:
+                return 0
+            d = mon + wd
+            return d if d <= last else 0
 
         def mid_biz() -> int:
             """해당 월 영업일 목록의 가운데 날짜"""
@@ -274,19 +282,19 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
             m = _re.match(r'^(\d)/(\d)주차\s*([월화수목금])', s)
             if m:
                 wd = WD_KO[m.group(3)]
-                return [d for d in [nth_weekday(int(m.group(1)), wd),
-                                     nth_weekday(int(m.group(2)), wd)] if d]
+                return [d for d in [week_n_day(int(m.group(1)), wd),
+                                     week_n_day(int(m.group(2)), wd)] if d]
 
             # N주차 요일 (예: '2주차 목요일', '3주차 월요일')
             m = _re.match(r'^(\d)주차\s*([월화수목금])', s)
             if m:
-                d = nth_weekday(int(m.group(1)), WD_KO[m.group(2)])
+                d = week_n_day(int(m.group(1)), WD_KO[m.group(2)])
                 return [d] if d else []
 
             # N주차 단독 (예: '1주차', '2주차') → 해당 주 금요일
             m = _re.match(r'^(\d)주차$', s)
             if m:
-                d = nth_weekday(int(m.group(1)), 4)
+                d = week_n_day(int(m.group(1)), 4)
                 return [d] if d else []
 
             # 결산 후 즉시 → 5일 기준 첫 영업일
