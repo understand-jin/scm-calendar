@@ -143,42 +143,44 @@ def get_stats():
 
 @app.get("/api/contracts")
 def get_contracts():
-    import openpyxl
-
     today = date.today()
+    deadline = date(today.year + (today.month + 5) // 12, (today.month + 5) % 12 + 1, today.day)
 
-    def add_months(d, months):
-        m = d.month - 1 + months
-        y = d.year + m // 12
-        m = m % 12 + 1
-        day = min(d.day, calendar.monthrange(y, m)[1])
-        return date(y, m, day)
+    rows = db.select_contracts()
+    result = []
+    for row in rows:
+        end = date.fromisoformat(row["계약기간종료일"])
+        result.append({
+            "id": row["id"],
+            "계약구분": row["계약구분"],
+            "공급업체명": row["공급업체명"],
+            "계약기간종료일": row["계약기간종료일"],
+            "d_day": (end - today).days,
+            "expiring_soon": end <= deadline,
+        })
+    return result
 
-    deadline = add_months(today, 6)
 
-    try:
-        wb = openpyxl.load_workbook("대웅통합입찰.xlsx", data_only=True)
-        ws = wb.active
-        result = []
-        for i, row in enumerate(ws.iter_rows(values_only=True)):
-            if i == 0:
-                continue
-            if not any(row):
-                continue
-            category, supplier, end_dt = row[0], row[1], row[2]
-            if end_dt is None:
-                continue
-            end = end_dt.date() if hasattr(end_dt, "date") else end_dt
-            result.append({
-                "계약구분": category or "",
-                "공급업체명": supplier or "",
-                "계약기간종료일": end.strftime("%Y-%m-%d"),
-                "d_day": (end - today).days,
-                "expiring_soon": end <= deadline,
-            })
-        return result
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="대웅통합입찰.xlsx 파일을 찾을 수 없습니다")
+class ContractIn(BaseModel):
+    계약구분: str
+    공급업체명: str
+    계약기간종료일: str
+
+
+@app.post("/api/contracts")
+def create_contract(body: ContractIn):
+    return db.insert_contract(body.dict())
+
+
+@app.patch("/api/contracts/{contract_id}")
+def update_contract(contract_id: int, body: ContractIn):
+    return db.update_contract(contract_id, body.dict())
+
+
+@app.delete("/api/contracts/{contract_id}")
+def delete_contract(contract_id: int):
+    db.delete_contract(contract_id)
+    return {"deleted": True}
 
 
 @app.get("/api/filters")

@@ -107,3 +107,18 @@ def insert_task(data: dict) -> dict:
 
 def delete_task(task_id: int) -> None:
     _delete("tasks", {"id": f"eq.{task_id}"})
+
+# contracts
+def select_contracts() -> list[dict]:
+    return _get("contracts", {"select": "*", "order": "계약기간종료일.asc"})
+
+def insert_contract(data: dict) -> dict:
+    rows = _post("contracts", data)
+    return rows[0] if rows else {}
+
+def update_contract(contract_id: int, data: dict) -> dict:
+    rows = _patch("contracts", {"id": f"eq.{contract_id}"}, data)
+    return rows[0] if rows else {}
+
+def delete_contract(contract_id: int) -> None:
+    _delete("contracts", {"id": f"eq.{contract_id}"})
