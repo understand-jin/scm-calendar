@@ -141,6 +141,46 @@ def get_stats():
             "by_category": by_cat, "by_owner": by_owner, "recent_logs": logs}
 
 
+@app.get("/api/contracts")
+def get_contracts():
+    import openpyxl
+
+    today = date.today()
+
+    def add_months(d, months):
+        m = d.month - 1 + months
+        y = d.year + m // 12
+        m = m % 12 + 1
+        day = min(d.day, calendar.monthrange(y, m)[1])
+        return date(y, m, day)
+
+    deadline = add_months(today, 6)
+
+    try:
+        wb = openpyxl.load_workbook("대웅통합입찰.xlsx", data_only=True)
+        ws = wb.active
+        result = []
+        for i, row in enumerate(ws.iter_rows(values_only=True)):
+            if i == 0:
+                continue
+            if not any(row):
+                continue
+            category, supplier, end_dt = row[0], row[1], row[2]
+            if end_dt is None:
+                continue
+            end = end_dt.date() if hasattr(end_dt, "date") else end_dt
+            result.append({
+                "계약구분": category or "",
+                "공급업체명": supplier or "",
+                "계약기간종료일": end.strftime("%Y-%m-%d"),
+                "d_day": (end - today).days,
+                "expiring_soon": end <= deadline,
+            })
+        return result
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="대웅통합입찰.xlsx 파일을 찾을 수 없습니다")
+
+
 @app.get("/api/filters")
 def get_filters():
     tasks = db.select_tasks()
@@ -174,7 +214,7 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
         if "주 2회" in 시기 or "주2회" in 시기:
             days = [d for d in range(1, last+1) if date(year,month,d).weekday() in (1,3)]
         elif "주1회" in 시기 or "주 1회" in 시기:
-            days = all_wd(0)
+            days = all_wd(2)  # 수요일
         else:
             target = next((n for nm,n in wd_map.items() if nm in 시기), 0)
             days = all_wd(target)
@@ -220,6 +260,11 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
                         return d
             return 0
 
+        def mid_biz() -> int:
+            """해당 월 영업일 목록의 가운데 날짜"""
+            biz = [d for d in range(1, last + 1) if date(year, month, d).weekday() < 5]
+            return biz[len(biz) // 2]
+
         def parse_single(s: str) -> list[int]:
             s = s.strip()
 
@@ -236,19 +281,19 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
                 d = nth_weekday(int(m.group(1)), WD_KO[m.group(2)])
                 return [d] if d else []
 
-            # N주차 단독 (예: '1주차', '2주차') → N번째 월요일
+            # N주차 단독 (예: '1주차', '2주차') → 해당 주 금요일
             m = _re.match(r'^(\d)주차$', s)
             if m:
-                d = nth_weekday(int(m.group(1)), 0)
+                d = nth_weekday(int(m.group(1)), 4)
                 return [d] if d else []
 
-            # 결산
+            # 결산 후 즉시 → 5일 기준 첫 영업일
             if "결산" in s:
-                return [to_biz(25)]
+                return [to_biz(5)]
 
-            # 중순~말 / 월중순~말
+            # 중순~말 / 월중순~말 → 월 영업일 중간
             if "중순~말" in s:
-                return [to_biz(20)]
+                return [mid_biz()]
 
             # 월말 / 말일 / 당월 말
             if "월말" in s or "말일" in s or "당월 말" in s:
@@ -258,13 +303,13 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
             if "1~4주차" in s or "1-4주차" in s:
                 return all_wd(0)
 
-            # 첫 영업일 / 첫째주 / 월초
-            if "첫 영업일" in s or "첫영업일" in s or "첫째주" in s or "월초" in s:
+            # 첫 영업일 / 월초
+            if "첫 영업일" in s or "첫영업일" in s or "월초" in s:
                 return [first_biz()]
 
-            # 중순
+            # 중순 → 월 영업일 중간
             if "중순" in s:
-                return [to_biz(15)]
+                return [mid_biz()]
 
             # 월 2회
             if "월 2회" in s or "월2회" in s:
