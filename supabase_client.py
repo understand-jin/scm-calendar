@@ -51,9 +51,15 @@ def ping() -> bool:
 
 # tasks
 def select_tasks(filters: dict | None = None) -> list[dict]:
+    """filters 값은 보통 문자열(=eq 완전일치)이지만, (연산자, 값) 튜플을
+    넘기면 해당 PostgREST 연산자를 사용한다. 예: ("ilike", "*조은혜*")"""
     params = {"select": "*", "order": "id.asc"}
     for k, v in (filters or {}).items():
-        params[k] = f"eq.{v}"
+        if isinstance(v, tuple):
+            op, val = v
+            params[k] = f"{op}.{val}"
+        else:
+            params[k] = f"eq.{v}"
     return _get("tasks", params)
 
 def get_task(task_id: int) -> dict:
@@ -74,9 +80,10 @@ def select_logs(task_id: int) -> list[dict]:
 
 def select_logs_for_month(month_prefix: str) -> list[dict]:
     year = month_prefix[:4]
-    monthly = _get("task_logs", {"select": "*", "period_key": f"like.{month_prefix}%"})
-    weekly  = _get("task_logs", {"select": "*", "period_key": f"like.{year}-W%"})
-    return monthly + weekly
+    monthly   = _get("task_logs", {"select": "*", "period_key": f"like.{month_prefix}%"})
+    weekly    = _get("task_logs", {"select": "*", "period_key": f"like.{year}-W%"})
+    quarterly = _get("task_logs", {"select": "*", "period_key": f"like.{year}-Q%"})
+    return monthly + weekly + quarterly
 
 def select_recent_logs(limit: int = 20) -> list[dict]:
     return _get("task_logs", {"select": "*", "order": "logged_at.desc", "limit": str(limit)})
@@ -100,6 +107,9 @@ def delete_log(log_id: int) -> None:
 
 def delete_all_logs() -> None:
     _delete("task_logs", {"id": "gte.0"})
+
+def delete_all_logs_for_task(task_id: int) -> None:
+    _delete("task_logs", {"task_id": f"eq.{task_id}"})
 
 def insert_task(data: dict) -> dict:
     rows = _post("tasks", data)

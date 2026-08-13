@@ -4,6 +4,10 @@
 CREATE TABLE IF NOT EXISTS tasks (
     id BIGSERIAL PRIMARY KEY,
     파트 TEXT NOT NULL,
+    -- 파트에 따라 자동 계산되는 소속 팀 (위탁파트/수탁파트 → 위수탁사업팀, 그 외 → SCM팀)
+    팀 TEXT GENERATED ALWAYS AS (
+        CASE WHEN 파트 IN ('위탁파트', '수탁파트') THEN '위수탁사업팀' ELSE 'SCM팀' END
+    ) STORED,
     주기 TEXT,
     구분 TEXT,
     업무 TEXT NOT NULL,

@@ -37,6 +37,12 @@
   --exp-main: #AD3D18;
   --exp-light: #FFF4EF;
   --exp-border: #F6BCA2;
+  --con-main: #7C3AED;
+  --con-light: #F5F1FF;
+  --con-border: #D9C9FF;
+  --ent-main: #0D9467;
+  --ent-light: #ECFDF6;
+  --ent-border: #A8ECD3;
 
   /* Status */
   --status-done: #13936A;
@@ -329,10 +335,13 @@ select.filter-select.is-active { border-color: var(--primary-border); background
 .cyc-daily   { background: #fef3c7; color: #92400e; }
 .cyc-weekly  { background: #dcfce7; color: #14532d; }
 .cyc-monthly { background: #ede9fe; color: #4c1d95; }
+.cyc-quarterly { background: #dbeafe; color: #1e40af; }
 
 .chip-scm   { background: var(--scm-light);  color: var(--scm-main);  border-left-color: var(--scm-border); }
 .chip-imp   { background: var(--imp-light);  color: var(--imp-main);  border-left-color: var(--imp-border); }
 .chip-exp   { background: var(--exp-light);  color: var(--exp-main);  border-left-color: var(--exp-border); }
+.chip-con   { background: var(--con-light);  color: var(--con-main);  border-left-color: var(--con-border); }
+.chip-ent   { background: var(--ent-light);  color: var(--ent-main);  border-left-color: var(--ent-border); }
 .chip-other { background: #F1F5F9; color: #64748B; border-left-color: #94A3B8; }
 
 .chip-done     { opacity: .55; border-left-color: var(--status-done) !important; }
@@ -370,6 +379,8 @@ select.filter-select.is-active { border-color: var(--primary-border); background
 .daily-chip.chip-scm { border-color: var(--scm-border); }
 .daily-chip.chip-imp { border-color: var(--imp-border); }
 .daily-chip.chip-exp { border-color: var(--exp-border); }
+.daily-chip.chip-con { border-color: var(--con-border); }
+.daily-chip.chip-ent { border-color: var(--ent-border); }
 .daily-chip.chip-other { border-color: #CBD5E1; }
 
 /* ── 날짜 팝업 ── */
@@ -420,6 +431,7 @@ tr.data-row:hover td { background: var(--primary-light) !important; cursor: poin
 .tc-daily   { color: #B45309; }
 .tc-weekly  { color: #15803D; }
 .tc-monthly { color: #6D28D9; }
+.tc-quarterly { color: #1E40AF; }
 .td-status  { text-align: center; }
 .td-output  { font-size: 12px; color: var(--fg-2); }
 /* 주기 구분 행 */
@@ -440,9 +452,12 @@ tr.data-row:hover .btn-row-del { display: flex; }
 .badge-scm   { background: var(--scm-light);  color: var(--scm-main); }
 .badge-imp   { background: var(--imp-light);  color: var(--imp-main); }
 .badge-exp   { background: var(--exp-light);  color: var(--exp-main); }
+.badge-con   { background: var(--con-light);  color: var(--con-main); }
+.badge-ent   { background: var(--ent-light);  color: var(--ent-main); }
 .badge-daily  { background: #FEF3C7; color: #B45309; }
 .badge-weekly { background: #DCFCE7; color: #15803D; }
 .badge-monthly{ background: #EDE9FE; color: #6D28D9; }
+.badge-quarterly{ background: #DBEAFE; color: #1E40AF; }
 .badge-trade  { background: #FFF7ED; color: #C2410C; }
 
 /* ② 목록 뷰 상태 신호등 */
@@ -806,6 +821,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
 .cycle-tab.k-daily.active   .cycle-count { color: #92400E; background: #FEF3C7; border-color: #FDE68A; }
 .cycle-tab.k-weekly.active  .cycle-count { color: #14532D; background: #DCFCE7; border-color: #BBF7D0; }
 .cycle-tab.k-monthly.active .cycle-count { color: #4C1D95; background: #EDE9FE; border-color: #DDD6FE; }
+.cycle-tab.k-quarterly.active { color: #1E40AF; background: #DBEAFE; border-color: #BFDBFE; }
 .cycle-tabs-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
 .cycle-tabs-meta { font-size: 11.5px; color: var(--fg-3); padding: 0 6px; }
 .cycle-tabs-meta b { color: var(--fg-1); font-weight: 700; }
@@ -818,6 +834,8 @@ tr.data-row:hover .btn-row-del { display: flex; }
 }
 .part-panel.part-scm { border-top: 3px solid var(--scm-main); }
 .part-panel.part-exp { border-top: 3px solid var(--exp-main); }
+.part-panel.part-con { border-top: 3px solid var(--con-main); }
+.part-panel.part-ent { border-top: 3px solid var(--ent-main); }
 .part-panel-hd {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border);
@@ -1188,6 +1206,12 @@ tr.data-row:hover .btn-row-del { display: flex; }
       <span style="display:flex;align-items:center;gap:4px;">
         <span style="width:10px;height:10px;border-radius:2px;background:var(--exp-main);display:inline-block;"></span>수출
       </span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--con-main);display:inline-block;"></span>위탁파트
+      </span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--ent-main);display:inline-block;"></span>수탁파트
+      </span>
       <div style="width:1px;height:18px;background:var(--border);"></div>
       <!-- ② 상태 범례 -->
       <span style="display:flex;align-items:center;gap:3px;"><span class="sdot sdot-done"></span>완료</span>
@@ -1199,6 +1223,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
   <!-- 필터 바 -->
   <div id="filter-bar">
     <span class="filter-label">필터</span>
+    <select class="filter-select" id="f-팀"><option value="">전체 팀</option></select>
     <select class="filter-select" id="f-파트"><option value="">전체 파트</option></select>
     <select class="filter-select" id="f-주기"><option value="">전체 주기</option></select>
     <select class="filter-select" id="f-구분"><option value="">전체 구분</option></select>
@@ -1369,6 +1394,8 @@ tr.data-row:hover .btn-row-del { display: flex; }
             <option value="">선택</option>
             <option value="SCM쉐어드파트">SCM쉐어드파트</option>
             <option value="수출입파트">수출입파트</option>
+            <option value="위탁파트">위탁파트</option>
+            <option value="수탁파트">수탁파트</option>
           </select>
         </div>
         <div class="form-row">
@@ -1378,6 +1405,7 @@ tr.data-row:hover .btn-row-del { display: flex; }
             <option value="매일">매일</option>
             <option value="매주">매주</option>
             <option value="매월">매월</option>
+            <option value="분기">분기</option>
           </select>
         </div>
       </div>
@@ -1426,7 +1454,7 @@ const state = {
   calData: null,
   allTasks: [],
   listStatuses: {},   // taskId → { period_key: status }
-  filters: { 파트: "", 주기: "", 구분: "", 주인: "" },
+  filters: { 팀: "", 파트: "", 주기: "", 구분: "", 주인: "" },
   sortCol: "", sortDir: 1,
   modal: { taskId: null, periodKey: null, selectedStatus: null },
   listSearch: "",
@@ -1469,6 +1497,8 @@ function chipClass(task) {
   if (task.파트 === "SCM쉐어드파트") return "chip-scm";
   if (task.구분 === "수입") return "chip-imp";
   if (task.구분 === "수출") return "chip-exp";
+  if (task.파트 === "위탁파트") return "chip-con";
+  if (task.파트 === "수탁파트") return "chip-ent";
   return "chip-other";
 }
 
@@ -1494,6 +1524,7 @@ function cycleIcon(c) {
   if (c === "매일")  return `<span class="cyc-icon cyc-daily" title="매일">일</span>`;
   if (c === "매주")  return `<span class="cyc-icon cyc-weekly" title="매주">주</span>`;
   if (c === "매월")  return `<span class="cyc-icon cyc-monthly" title="매월">월</span>`;
+  if (c === "분기")  return `<span class="cyc-icon cyc-quarterly" title="분기">분</span>`;
   return "";
 }
 
@@ -1501,15 +1532,30 @@ function badgePart(task) {
   if (!task) return "";
   const cls = task.파트 === "SCM쉐어드파트" ? "badge-scm"
             : task.구분 === "수입" ? "badge-imp"
-            : task.구분 === "수출" ? "badge-exp" : "";
-  return `<span class="badge ${cls}">${task.파트 === "SCM쉐어드파트" ? "SCM" : task.구분 || task.파트}</span>`;
+            : task.구분 === "수출" ? "badge-exp"
+            : task.파트 === "위탁파트" ? "badge-con"
+            : task.파트 === "수탁파트" ? "badge-ent" : "";
+  const label = task.파트 === "SCM쉐어드파트" ? "SCM"
+              : task.파트 === "위탁파트" ? "위탁"
+              : task.파트 === "수탁파트" ? "수탁"
+              : task.구분 || task.파트;
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 function badgeCycle(c) {
-  const cls = c === "매일" ? "badge-daily" : c === "매주" ? "badge-weekly" : "badge-monthly";
+  const cls = c === "매일" ? "badge-daily" : c === "매주" ? "badge-weekly" : c === "분기" ? "badge-quarterly" : "badge-monthly";
   return `<span class="badge ${cls}">${c}</span>`;
 }
 function statusBadge(s) {
   return `<span class="badge s-${s}">${STATUS_LABEL[s] || s}</span>`;
+}
+function badgeTeam(task) {
+  if (!task || !task.팀) return "";
+  const cls = task.팀 === "위수탁사업팀" ? "badge-ent" : "badge-scm";
+  return `<span class="badge ${cls}">${escHtml(task.팀)}</span>`;
+}
+// 파트 → 팀 매핑 (서버의 GENERATED 컬럼 로직과 동일)
+function teamForPart(part) {
+  return (part === "위탁파트" || part === "수탁파트") ? "위수탁사업팀" : "SCM팀";
 }
 
 // ③ 주차 포맷
@@ -1520,6 +1566,10 @@ function fmtPeriodKey(pk, cycle) {
     if (m) return `${m[1]}년 ${parseInt(m[2])}주차`;
   }
   if (cycle === "매월") return pk.slice(0, 7) + " 월간";
+  if (cycle === "분기") {
+    const m = pk.match(/(\d{4})-Q(\d)/);
+    if (m) return `${m[1]}년 ${m[2]}분기`;
+  }
   return pk;
 }
 
@@ -1532,11 +1582,26 @@ function escHtml(s) {
   return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
+// 주인 컬럼은 "김예지, 조은혜"처럼 콤마/마침표로 여러 명이 함께 적혀있을 수 있어
+// 담당자 필터는 그 중 한 명이라도 선택한 이름과 일치하면 매치로 본다.
+function ownerNames(t) {
+  return (t?.주인 || "").split(/[,.]/).map(s => s.trim()).filter(Boolean);
+}
+function matchesFilters(t, f) {
+  if (!t) return false;
+  if (f.팀 && t.팀 !== f.팀) return false;
+  if (f.파트 && t.파트 !== f.파트) return false;
+  if (f.주기 && t.주기 !== f.주기) return false;
+  if (f.구분 && t.구분 !== f.구분) return false;
+  if (f.주인 && !ownerNames(t).includes(f.주인)) return false;
+  return true;
+}
+
 // ── 필터 초기화 ──────────────────────────────────────────────
 async function initFilters() {
   const data = await api.get("/api/filters");
-  const defs = { 파트: data.파트, 주기: data.주기, 구분: data.구분, 주인: data.주인 };
-  const labels = { 파트: "전체 파트", 주기: "전체 주기", 구분: "전체 구분", 주인: "전체 담당자" };
+  const defs = { 팀: data.팀, 파트: data.파트, 주기: data.주기, 구분: data.구분, 주인: data.주인 };
+  const labels = { 팀: "전체 팀", 파트: "전체 파트", 주기: "전체 주기", 구분: "전체 구분", 주인: "전체 담당자" };
   for (const [key, vals] of Object.entries(defs)) {
     const sel = document.getElementById(`f-${key}`);
     sel.innerHTML = `<option value="">${labels[key]}</option>` +
@@ -1646,14 +1711,8 @@ function renderCalendar() {
     // 매일 업무는 패널로 분리 → 셀에서 제외
     const rawEvts = (events[ds] || []).filter(e => {
       const t = tasks[e.task_id];
-      if (!t) return false;
-      if (t.주기 === "매일") return false;
-      const f = state.filters;
-      if (f.파트 && t.파트 !== f.파트) return false;
-      if (f.주기 && t.주기 !== f.주기) return false;
-      if (f.구분 && t.구분 !== f.구분) return false;
-      if (f.주인 && t.주인 !== f.주인) return false;
-      return true;
+      if (!t || t.주기 === "매일") return false;
+      return matchesFilters(t, state.filters);
     });
 
     // 항목 많으면 2단 (더보기 없이 전부 표시)
@@ -1713,12 +1772,7 @@ function renderCalendar() {
       const evts = (state.calData?.events?.[ds] || []).filter(ev => {
         const t = state.calData?.tasks?.[ev.task_id];
         if (!t || t.주기 === "매일") return false;
-        const f = state.filters;
-        if (f.파트 && t.파트 !== f.파트) return false;
-        if (f.주기 && t.주기 !== f.주기) return false;
-        if (f.구분 && t.구분 !== f.구분) return false;
-        if (f.주인 && t.주인 !== f.주인) return false;
-        return true;
+        return matchesFilters(t, state.filters);
       });
       renderSidePanel(ds, evts);
       document.querySelectorAll(".cal-cell.selected").forEach(c => c.classList.remove("selected"));
@@ -1737,12 +1791,7 @@ function renderCalendar() {
       const evts = (state.calData?.events?.[ds] || []).filter(ev => {
         const t = state.calData?.tasks?.[ev.task_id];
         if (!t || t.주기 === "매일") return false;
-        const f = state.filters;
-        if (f.파트 && t.파트 !== f.파트) return false;
-        if (f.주기 && t.주기 !== f.주기) return false;
-        if (f.구분 && t.구분 !== f.구분) return false;
-        if (f.주인 && t.주인 !== f.주인) return false;
-        return true;
+        return matchesFilters(t, state.filters);
       });
       renderSidePanel(ds, evts);
     }
@@ -1959,25 +2008,20 @@ function fmtResolvedDays(days, year, month) {
 }
 
 function renderList() {
-  const CYCLE_ORDER = { "매일": 0, "매주": 1, "매월": 2 };
-  const PARTS = ["SCM쉐어드파트", "수출입파트"];
+  const CYCLE_ORDER = { "매일": 0, "매주": 1, "매월": 2, "분기": 3 };
+  const PARTS = ["SCM쉐어드파트", "수출입파트", "위탁파트", "수탁파트"];
   const partConf = {
     "SCM쉐어드파트": { short: "SCM",  color: "scm", mainCss: "--scm-main", lightCss: "--scm-light", borderCss: "--scm-border" },
     "수출입파트":    { short: "수출입", color: "exp", mainCss: "--exp-main", lightCss: "--exp-light", borderCss: "--exp-border" },
+    "위탁파트":      { short: "위탁",  color: "con", mainCss: "--con-main", lightCss: "--con-light", borderCss: "--con-border" },
+    "수탁파트":      { short: "수탁",  color: "ent", mainCss: "--ent-main", lightCss: "--ent-light", borderCss: "--ent-border" },
   };
 
   // Base filter (from filter bar)
-  const baseFiltered = state.allTasks.filter(t => {
-    const f = state.filters;
-    if (f.파트 && t.파트 !== f.파트) return false;
-    if (f.주기 && t.주기 !== f.주기) return false;
-    if (f.구분 && t.구분 !== f.구분) return false;
-    if (f.주인 && t.주인 !== f.주인) return false;
-    return true;
-  });
+  const baseFiltered = state.allTasks.filter(t => matchesFilters(t, state.filters));
 
   // Cycle counts (from base filtered, before search/cycle tab)
-  const cycleCounts = { 매일: 0, 매주: 0, 매월: 0 };
+  const cycleCounts = { 매일: 0, 매주: 0, 매월: 0, 분기: 0 };
   for (const t of baseFiltered) cycleCounts[t.주기] = (cycleCounts[t.주기] || 0) + 1;
 
   // Apply search
@@ -2032,10 +2076,11 @@ function renderList() {
     const dailyN   = partTasks.filter(t => t.주기 === "매일").length;
     const weeklyN  = partTasks.filter(t => t.주기 === "매주").length;
     const monthlyN = partTasks.filter(t => t.주기 === "매월").length;
+    const quarterlyN = partTasks.filter(t => t.주기 === "분기").length;
 
     const rows = sorted.map(t => {
       const status = statusOfTask(t);
-      const cycleClass = t.주기 === "매일" ? "tc-daily" : t.주기 === "매주" ? "tc-weekly" : "tc-monthly";
+      const cycleClass = t.주기 === "매일" ? "tc-daily" : t.주기 === "매주" ? "tc-weekly" : t.주기 === "분기" ? "tc-quarterly" : "tc-monthly";
       const statusHtml = status
         ? `<span class="status-pill s-${status}">${sdot(status)}${STATUS_LABEL[status] || status}</span>`
         : `<span class="td-dash">—</span>`;
@@ -2059,11 +2104,13 @@ function renderList() {
       <div class="part-panel-hd">
         <span class="part-panel-mark" style="background:var(${conf.lightCss});color:var(${conf.mainCss});border:1px solid var(${conf.borderCss})">${conf.short}</span>
         <h3>${escHtml(partKey)}</h3>
+        <span class="badge ${teamForPart(partKey) === "위수탁사업팀" ? "badge-ent" : "badge-scm"}" style="margin-left:2px;">${teamForPart(partKey)}</span>
         <span class="part-panel-cnt">${partTasks.length}건</span>
         <span class="part-panel-meta">
           <span class="ppc"><span class="badge badge-daily">매일</span>${dailyN}</span>
           <span class="ppc"><span class="badge badge-weekly">매주</span>${weeklyN}</span>
           <span class="ppc"><span class="badge badge-monthly">매월</span>${monthlyN}</span>
+          ${quarterlyN ? `<span class="ppc"><span class="badge badge-quarterly">분기</span>${quarterlyN}</span>` : ""}
         </span>
       </div>
       <div class="list-table-wrap part-table">
@@ -2085,19 +2132,22 @@ function renderList() {
 
   const scmCount = tasks.filter(t => t.파트 === "SCM쉐어드파트").length;
   const expCount = tasks.filter(t => t.파트 === "수출입파트").length;
+  const conCount = tasks.filter(t => t.파트 === "위탁파트").length;
+  const entCount = tasks.filter(t => t.파트 === "수탁파트").length;
 
   const cycleTabs = [
     ["all",  "전체",  baseFiltered.length, ""],
     ["매일", "매일",  cycleCounts["매일"] || 0, "k-daily"],
     ["매주", "매주",  cycleCounts["매주"] || 0, "k-weekly"],
     ["매월", "매월",  cycleCounts["매월"] || 0, "k-monthly"],
+    ["분기", "분기",  cycleCounts["분기"] || 0, "k-quarterly"],
   ].map(([k, label, n, cls]) =>
     `<button class="cycle-tab${cf === k ? " active" : ""}${cls ? " " + cls : ""}" data-cycle="${k}">
       <span>${label}</span><span class="cycle-count">${n}</span>
     </button>`
   ).join("") +
   `<span class="cycle-tabs-sep"></span>
-   <span class="cycle-tabs-meta">SCM쉐어드 <b>${scmCount}</b>건 · 수출입 <b>${expCount}</b>건</span>`;
+   <span class="cycle-tabs-meta">SCM쉐어드 <b>${scmCount}</b>건 · 수출입 <b>${expCount}</b>건 · 위탁 <b>${conCount}</b>건 · 수탁 <b>${entCount}</b>건</span>`;
 
   container.innerHTML = `
     <div class="list-toolbar">
@@ -2250,10 +2300,11 @@ function renderModalInfo(task, periodKey) {
   const pkDisplay = fmtPeriodKey(periodKey, task.주기);
 
   document.getElementById("modal-meta").innerHTML =
-    `${badgePart(task)} ${badgeCycle(task.주기||"")}` +
+    `${badgeTeam(task)} ${badgePart(task)} ${badgeCycle(task.주기||"")}` +
     (periodKey ? ` <span style="font-size:11px;color:var(--text-muted);">${escHtml(pkDisplay)}</span>` : "");
 
   document.getElementById("modal-info").innerHTML = `
+    <div class="info-item"><div class="lbl">팀</div><div class="val">${escHtml(task.팀||"-")}</div></div>
     <div class="info-item"><div class="lbl">파트</div><div class="val">${escHtml(task.파트||"-")}</div></div>
     <div class="info-item"><div class="lbl">구분</div><div class="val">${escHtml(task.구분||"-")}</div></div>
     <div class="info-item"><div class="lbl">담당자</div><div class="val">${escHtml(task.주인||"-")}</div></div>
@@ -2470,7 +2521,7 @@ document.getElementById("today-btn").addEventListener("click", async () => {
 });
 
 document.getElementById("btn-reset").addEventListener("click", () => {
-  state.filters = { 파트: "", 주기: "", 구분: "", 주인: "" };
+  state.filters = { 팀: "", 파트: "", 주기: "", 구분: "", 주인: "" };
   document.querySelectorAll(".filter-select").forEach(s => { s.value = ""; s.classList.remove("is-active"); });
   onFilterChange();
 });

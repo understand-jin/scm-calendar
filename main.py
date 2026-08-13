@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import date, timedelta
 import calendar
+import re
 from typing import Optional
 import os
 import supabase_client as db
@@ -34,15 +35,18 @@ def health():
 @app.get("/api/tasks")
 def list_tasks(
     파트: Optional[str] = None,
+    팀: Optional[str] = None,
     주기: Optional[str] = None,
     구분: Optional[str] = None,
     주인: Optional[str] = None,
 ):
     f = {}
     if 파트: f["파트"] = 파트
+    if 팀: f["팀"] = 팀
     if 주기: f["주기"] = 주기
     if 구분: f["구분"] = 구분
-    if 주인: f["주인"] = 주인
+    # 주인은 콤마/마침표로 여러 명이 함께 적혀있을 수 있어 부분(포함) 일치로 검색
+    if 주인: f["주인"] = ("ilike", f"*{주인}*")
     return db.select_tasks(f)
 
 
@@ -188,7 +192,20 @@ def get_filters():
     tasks = db.select_tasks()
     def uniq(k):
         return sorted({t[k] for t in tasks if t.get(k)})
-    return {"파트": uniq("파트"), "주기": uniq("주기"), "구분": uniq("구분"), "주인": uniq("주인")}
+
+    # 주인 컬럼은 "김예지, 조은혜"처럼 콤마/마침표로 여러 명이 함께 적혀있어
+    # 담당자 필터는 개별 이름 단위로 쪼개서 목록을 만든다.
+    owners: set[str] = set()
+    for t in tasks:
+        for name in re.split(r"[,.]", t.get("주인") or ""):
+            name = name.strip()
+            if name:
+                owners.add(name)
+
+    return {
+        "파트": uniq("파트"), "팀": uniq("팀"), "주기": uniq("주기"),
+        "구분": uniq("구분"), "주인": sorted(owners),
+    }
 
 
 # ── 캘린더 이벤트 생성 ────────────────────────────────────────
@@ -347,6 +364,16 @@ def _dates_for_task(task: dict, year: int, month: int) -> list[tuple[int, str]]:
 
         days = sorted(set(d for d in days_set if 1 <= d <= last))
         return [(d, mk) for d in days]
+
+    if 주기 == "분기":
+        # 분기 말월(3/6/9/12)의 마지막 영업일에 1회 표시
+        if month not in (3, 6, 9, 12):
+            return []
+        quarter = (month - 1) // 3 + 1
+        d = last
+        while date(year, month, d).weekday() >= 5:
+            d -= 1
+        return [(d, f"{year}-Q{quarter}")]
 
     return []
 
